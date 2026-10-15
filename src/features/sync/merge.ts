@@ -61,6 +61,18 @@ export function mergeSnapshots(base: DataSnapshot | null, local: DataSnapshot, r
     if (identity.some((key) => !equal(l[key], r[key]) || b && !equal(b[key], l[key]))) { conflict(entity, id, 'immutable-id', identity, b, l, r); return l }
     const deleted = entity !== 'settings' && result.tombstones.some((item) => item.entityType === entity && item.entityId === id)
     if (deleted) {
+      if (l.deletedAt && r.deletedAt) {
+        // A keep-deleted decision is a descendant of both conflicting revisions.
+        // Prefer that proof before selecting a deleted copy, or peers re-upload
+        // their own older deletion forever despite agreeing on visible content.
+        if (ancestors(l).includes(revision(r))) return l
+        if (ancestors(r).includes(revision(l))) return r
+        if (b && equal(l, b)) return r
+        if (b && equal(r, b)) return l
+        const held = revision(l) < revision(r) ? l : r
+        if (!equal(body(l), body(r))) conflict(entity, id, 'delete-vs-edit', ['deletedAt'], b, l, r)
+        return held
+      }
       const dead = l.deletedAt ? l : r.deletedAt ? r : undefined
       if (!dead) { conflict(entity, id, 'delete-vs-edit', ['deletedAt'], b, l, r); return l }
       const live = l.deletedAt ? r : l

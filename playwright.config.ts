@@ -3,7 +3,7 @@ import { defineConfig, devices } from '@playwright/test'
 const base = process.env.PAGES_BASE_PATH ?? '/polar-vocab/'
 export default defineConfig({
   testDir: './tests/e2e',
-  outputDir: './reports/test-results',
+  outputDir: './reports/test-results/e2e',
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 1 : 0,

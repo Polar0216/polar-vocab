@@ -5,10 +5,11 @@ import { PolarDatabase, V2_STORES } from '../../../src/storage/database'
 import { LocalVocabularyService } from '../../../src/features/vocabulary/service'
 import { SyncEngine } from '../../../src/features/sync/engine'
 import { GitHubClient } from '../../../src/integrations/github/client'
-import { decodeSnapshot, encodeSnapshot } from '../../../src/features/sync/protocol'
+import { decodeSnapshot, encodeSnapshot, logical } from '../../../src/features/sync/protocol'
 import { LocalReviewService } from '../../../src/features/review/service'
 import { LocalBackupService } from '../../../src/features/import-export/backup-service'
 import { resolveConflict } from '../../../src/features/sync/resolutions'
+import { mergeSnapshots } from '../../../src/features/sync/merge'
 import { capture } from '../domain/fixtures'
 import { FakeGitHub } from './fake-github'
 const apps: { local: LocalVocabularyService; engine: SyncEngine }[] = []
@@ -38,6 +39,106 @@ describe('two independent devices, real FSRS, persisted sync attempts', () => {
     const a = app(), b = app(), fake = new FakeGitHub(); const word = await a.local.add({ lang: 'en', lemma: 'deleted' }); await connect(a.engine, fake); await connect(b.engine, fake)
     await a.local.softDelete([word.id]); await b.local.batchUpdate([word.id], { addTags: ['offline-edit'] }); await a.engine.synchronize(); expect(await b.engine.synchronize()).toBe('conflict'); expect(await b.local.get(word.id)).toBeUndefined()
     const conflict = (await b.local.db.conflicts.toArray())[0]; expect(conflict.kind).toBe('delete-vs-edit'); await resolveConflict(b.local, conflict.id, 'keep-deleted'); await b.engine.synchronize(); expect((await decodeSnapshot(fake.text!)).tombstones.length).toBeGreaterThan(0); expect(await b.local.db.conflictDecisions.count()).toBe(1)
+  })
+  it('converges the audited deletion resolution on both devices without revision ping-pong or extra PUTs', async () => {
+    const a = app(), b = app(), fake = new FakeGitHub()
+    const word = await a.local.add({ lang: 'en', lemma: 'deletion-resolution', meanings: ['original'] })
+    await connect(a.engine, fake)
+    await connect(b.engine, fake)
+
+    await a.local.softDelete([word.id])
+    const deleted = (await a.local.db.vocabularies.get(word.id))!
+    const tombstones = await a.local.db.tombstones.toArray()
+    await b.local.batchUpdate([word.id], { addTags: ['offline-edited-copy'] })
+    const edited = (await b.local.get(word.id))!
+    await a.engine.synchronize()
+    expect(await b.engine.synchronize()).toBe('conflict')
+    const conflict = (await b.local.db.conflicts.toArray())[0]
+    expect(conflict).toMatchObject({ kind: 'delete-vs-edit', entityId: word.id, local: edited, remote: deleted })
+
+    await resolveConflict(b.local, conflict.id, 'keep-deleted')
+    const resolved = (await b.local.db.vocabularies.get(word.id))!
+    expect(resolved.revisionId).not.toBe(deleted.revisionId)
+    expect(resolved.parentRevisionIds).toEqual(expect.arrayContaining([deleted.revisionId, edited.revisionId]))
+    expect(resolved.deletedAt).toBe(deleted.deletedAt)
+    await b.engine.synchronize()
+    await a.engine.synchronize()
+
+    const cloud = await decodeSnapshot(fake.text!)
+    expect(cloud.vocabularies.find((record) => record.id === word.id)).toEqual(resolved)
+    expect(await a.local.db.vocabularies.get(word.id)).toEqual(resolved)
+    expect(await b.local.db.vocabularies.get(word.id)).toEqual(resolved)
+    expect(logical(await a.local.snapshot())).toBe(logical(cloud))
+    expect(logical(await b.local.snapshot())).toBe(logical(cloud))
+    expect(cloud.tombstones).toEqual(tombstones)
+    const audit = (await b.local.db.conflictDecisions.toArray())[0]
+    expect(audit).toMatchObject({ choice: 'keep-deleted', conflict })
+    expect(audit.conflict.local).toEqual(edited)
+
+    const version = fake.version, sha = fake.sha, text = fake.text
+    const puts = fake.requests.filter((request) => request.method === 'PUT').length
+    for (let round = 0; round < 3; round++) {
+      await b.engine.synchronize()
+      await a.engine.synchronize()
+    }
+    expect(fake.version).toBe(version)
+    expect(fake.sha).toBe(sha)
+    expect(fake.text).toBe(text)
+    expect(fake.requests.filter((request) => request.method === 'PUT')).toHaveLength(puts)
+    for (const device of [a, b]) {
+      expect(await device.local.get(word.id)).toBeUndefined()
+      expect(await device.local.db.vocabularies.get(word.id)).toEqual(resolved)
+      expect(await device.local.db.tombstones.toArray()).toEqual(tombstones)
+      expect(await device.local.db.conflicts.count()).toBe(0)
+      expect(await device.local.db.pendingOperations.count()).toBe(0)
+      expect((await device.local.db.syncMetadata.toCollection().first())?.remoteSha).toBe(sha)
+      expect(logical(await device.local.snapshot())).toBe(logical(cloud))
+    }
+    expect(await b.local.db.conflictDecisions.toArray()).toEqual([audit])
+  })
+  it('holds concurrent deleted versions deterministically and audits both before converging an explicit decision', async () => {
+    const a = app(), b = app(), fake = new FakeGitHub()
+    const word = await a.local.add({ lang: 'en', lemma: 'concurrent-deletions' })
+    await connect(a.engine, fake)
+    await connect(b.engine, fake)
+    const base = await a.local.snapshot()
+    await a.local.softDelete([word.id])
+    await b.local.batchUpdate([word.id], { addTags: ['edited-before-independent-delete'] })
+    await b.local.softDelete([word.id])
+    const left = await a.local.snapshot(), right = await b.local.snapshot()
+    const leftDeleted = left.vocabularies[0], rightDeleted = right.vocabularies[0]
+    const forward = mergeSnapshots(base, left, right), reverse = mergeSnapshots(base, right, left)
+
+    expect(forward.snapshot.vocabularies[0].deletedAt).toBeDefined()
+    expect(logical(forward.snapshot)).toBe(logical(reverse.snapshot))
+    expect(forward.conflicts).toHaveLength(1)
+    expect(reverse.conflicts).toHaveLength(1)
+    expect(forward.conflicts[0]).toMatchObject({ kind: 'delete-vs-edit', local: leftDeleted, remote: rightDeleted })
+    expect(reverse.conflicts[0]).toMatchObject({ kind: 'delete-vs-edit', local: rightDeleted, remote: leftDeleted })
+    expect(forward.snapshot.tombstones).toHaveLength(2)
+    expect(forward.snapshot.tombstones).toEqual(expect.arrayContaining([...left.tombstones, ...right.tombstones]))
+
+    await a.engine.synchronize()
+    expect(await b.engine.synchronize()).toBe('conflict')
+    const conflict = (await b.local.db.conflicts.toArray())[0]
+    await resolveConflict(b.local, conflict.id, 'keep-deleted')
+    const resolved = (await b.local.db.vocabularies.get(word.id))!
+    expect(resolved.parentRevisionIds).toEqual(expect.arrayContaining([leftDeleted.revisionId, rightDeleted.revisionId]))
+    await b.engine.synchronize()
+    await a.engine.synchronize()
+    const cloud = await decodeSnapshot(fake.text!)
+    expect(cloud.vocabularies[0]).toEqual(resolved)
+    expect(logical(await a.local.snapshot())).toBe(logical(cloud))
+    expect(logical(await b.local.snapshot())).toBe(logical(cloud))
+    expect(cloud.tombstones).toHaveLength(2)
+    const audit = (await b.local.db.conflictDecisions.toArray())[0]
+    expect(audit).toMatchObject({ choice: 'keep-deleted', conflict: { local: rightDeleted, remote: leftDeleted } })
+    expect((audit.conflict.local as typeof rightDeleted).tags).toEqual(['edited-before-independent-delete'])
+    const version = fake.version
+    await b.engine.synchronize()
+    await a.engine.synchronize()
+    expect(fake.version).toBe(version)
+    expect(await b.local.db.conflictDecisions.toArray()).toEqual([audit])
   })
   it('deduplicates the same capture ingested independently', async () => {
     const a = app(), b = app(), fake = new FakeGitHub(); await connect(a.engine, fake); await connect(b.engine, fake)

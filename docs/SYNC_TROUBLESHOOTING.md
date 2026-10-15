@@ -46,4 +46,12 @@
 
 预期站点 `https://polar0216.github.io/polar-vocab/` 若404，先确认首次 push 已批准并完成，再到公开仓库 Settings → Pages 将 Source 设为 GitHub Actions，检查对应 main 提交的 build/deploy。配置存在、本地 preview 正常或打包成功都不能标记线上通过。
 
+首次运行 [38687892583](https://github.com/Polar0216/polar-vocab/actions/runs/38687892583) 实际在 Configure Pages 返回404，并提示检查 Pages 是否启用及 Source。首次 push 已成功，用户随后将 Source 设为 GitHub Actions，并执行 Re-run jobs → Re-run failed jobs。重跑成功反馈和正式站独立验证见下段。匿名 Actions REST 返回403时，不要将其误记为测试 PAT 权限失败；可只读查看公开运行和作业页面。
+
+恢复进度：用户反馈 [attempt 2](https://github.com/Polar0216/polar-vocab/actions/runs/38687892583/attempts/2) 为 Success（绿色）；正式站随后由工具独立验证返回200，18项正式站UI及manifest/SW/TXT/离线检查通过。当前网络访问重跑Actions页面出现连接中断，详细日志尚未读取，用户反馈与独立验证分别记录。
+
+本次私库早期两次网络错误均保留本机数据/outbox/批次；无凭证API同期也连接中断，不能据此归因为PAT权限失败。用户重新在页面授权后从原批次恢复，A–E真实通过。F删除证据/审计及G后继评分已核对，但旧版五轮整库同步发现删除修订不收敛。双侧已删除分支的祖先选择已本地修复，专项20/20及完整227项检查通过，尚未发布，F/G正式站完整复验仍未验证，H尚未执行。若网络问题再现，保留数据后重试原批次，无需发送Token、清库、重复初始化或降低TLS校验。
+
+本机验收备份应保存在自动测试输出目录之外。本次旧 `reports/test-results/` 被首次完整E2E启动清理，误删临时控制脚本、早期备份和JSONL；该轮停止并记退出1，不能算通过。仍打开的A/B数据已重导出至忽略的 `.cache/phase3.5-real-sync/`，数据及审计核对保留；受跟踪原件、PAT和私库未受损。现在E2E只写 `reports/test-results/e2e/`，旧临时原始明细不再完整保留，不能将重新导出当成恢复了所有旧文件。
+
 如果旧页面引用已删除的 hash 资产，先保留本机数据并检查 SW/当前部署；本地回归应先固定构建再启动浏览器，不能同时重建 dist。实际发布后的更新保留行为需按 [真机清单](REAL_DEVICE_CHECKLIST.md) 单独验证。

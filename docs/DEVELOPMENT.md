@@ -1,4 +1,4 @@
-# 开发、测试与部署（Phase 3.5 发布准备）
+# 开发、测试与部署（Phase 3.5 真实验收）
 
 工程基线 Node 24 LTS / npm 11，实际 Node 24.13.0、npm 11.6.2。使用 npm ci 按精确 package-lock.json 安装，.npmrc 开启 exact 与 engine-strict。Phase 3 未新增/升级依赖。
 
@@ -71,7 +71,9 @@ npm run test:e2e
 Remove-Item Env:PLAYWRIGHT_CHANNEL
 ```
 
-也可先 npx playwright install chromium 再 npm run test:e2e。自动 trace/截图与 HTML 分别在 reports/test-results、reports/playwright-report（忽略提交），手写阶段报告在 reports/phase-0～phase-3.5。测试使用人工词条与隔离 IndexedDB；模拟请求拦截固定 GitHub 域名，绝不使用真实 Token。受限沙箱若无法启动本机预览/浏览器，需环境允许后执行，不能标为通过。
+也可先 npx playwright install chromium 再 npm run test:e2e。自动 trace/截图只写 `reports/test-results/e2e/`，HTML 在 `reports/playwright-report/`（均忽略提交），手写阶段报告在 reports/phase-0～phase-3.5。Playwright 会清理其输出目录，真实验收备份、控制脚本和 profile 必须放在输出目录之外；当前恢复备份位于忽略的 `.cache/phase3.5-real-sync/`。仓库自带的模拟测试使用人工词条与隔离 IndexedDB，请求拦截固定 GitHub 域名，使用人工凭证值。真实私库验收另由用户在正式网页自行输入受限 PAT，不读取或输出凭证，不生成包含凭证的截图/trace。受限沙箱若无法启动本机预览/浏览器，需环境允许后执行，不能标为通过。
+
+本次首次重跑完整 E2E 时，旧 outputDir 为 `reports/test-results/`，启动清理误删了其中临时实时验收脚本、4份原始JSON备份及acceptance JSONL；该轮已停止、退出1，不算通过。没有删除受跟踪原件或损坏私库数据，也没有暴露PAT。打开的A/B数据已各重新导出一份完整备份到 `.cache/phase3.5-real-sync/`，分别核对5词/2卡/4评分/1墓碑/1决议、pending=0，B保留3份冲突审计；另存恢复元数据。旧临时原始产物不再完整保留，已观察工具输出仍是报告证据。输出目录隔离后的新一轮E2E退出0，31通过/3项有意跳过/34总项，约1.1分钟；配置更改后类型检查和lint亦单独重跑通过。
 
 ## 测试与故障注入
 
@@ -85,7 +87,7 @@ Remove-Item Env:PLAYWRIGHT_CHANNEL
 
 ## GitHub Pages 与 PWA
 
-.github/workflows/deploy.yml 已有 Node24 检查、静态构建、最小权限 Pages 发布；PR 只验证，main 的授权 push 或手动运行才发布。工作流不读取私人仓库或 PAT。当前已准备本地 main、origin=https://github.com/Polar0216/polar-vocab.git，首次 push 尚未批准，未推送或部署。
+.github/workflows/deploy.yml 已有 Node24 检查、静态构建、最小权限 Pages 发布；PR 只验证，main 的授权 push 或手动运行才发布。工作流不读取私人仓库或 PAT。首次获批准 push 已成功，main 跟踪 origin/main，目标为 https://github.com/Polar0216/polar-vocab.git。首次 Configure Pages 404后，用户确认 Source 为 GitHub Actions并重跑，反馈 attempt 2 为 Success；正式站200、18项UI和SW/离线检查由工具独立验证。尚未读取远端详细日志。
 
 首次 push 获批准后，在已有仓库的 Settings → Pages → Build and deployment → Source 选 GitHub Actions，并检查 Pages 环境规则。CI 默认 /<仓库名>/，用户根站或自定义域名在 Actions Variables 设公开 PAGES_BASE_PATH=/。Token 绝不放 VITE_*、.env 或 Actions。
 
@@ -103,11 +105,11 @@ CSP 在生产 HTML 注入：script/self、connect/self + api.github.com、object
 
 首页不执行网络同步模块。设置页按需加载；FSRS 只创建/评分/核验时执行；Dexie 独立 vendor 资产便于跨更新缓存，没有提高 500 kB 警告阈值。拆分后主入口与 vendor 总量仍要观察，不能把单入口变小等同总下载降低。
 
-## 真实设备与远端（尚未验证）
+## 真实多端与设备（部分待验收）
 
-先按 [GITHUB_SETUP](GITHUB_SETUP.md) 仅对专用私有测试仓库验证 Contents/CORS/版本/权限/分支规则、双设备和撤销凭证，禁止把 PAT 发进聊天、日志或仓库。[故障手册](SYNC_TROUBLESHOOTING.md) 说明恢复、锁、限流和容量。
+先按 [GITHUB_SETUP](GITHUB_SETUP.md) 仅对专用私有测试仓库验证 Contents/CORS/版本/权限/分支规则、双设备和撤销凭证，禁止把 PAT 发进聊天、日志或仓库。[故障手册](SYNC_TROUBLESHOOTING.md) 说明恢复、锁、限流和容量。2026-10-15 实测：早期网络错误后从原批次恢复，A–E 已在两个独立 Edge profile 与真实私库通过。F 的墓碑/审计及 G 的分叉、调度阻止、Again 决议和真实到期后后继 Good 已核对；旧版完整集合五轮同步发现删除修订不收敛。当前补丁专项20/20通过、单文件lint为0，`npm run check` 退出0（类型、lint、17文件227测试、Pages构建、产物及凭证检查）。修复尚未提交/部署，F/G正式站完整收敛仍未验证；H尚未执行，不能将本地回归替代真实验收。
 
-iPhone Safari 和主屏幕 PWA 分别验证：可信 HTTPS 首次缓存/安装、主动剪贴板与拒绝回退、Numbers CSV 引号/中文/德语/日期、本地离线编辑/评分/刷新/关闭重开、文件 JSON 下载/明确恢复、授权刷新、两设备离线分叉及决议后继续。只用独立测试数据验证清空。系统安装、真实发布 SW 升级、多标签更新、线上缓存头和远程 Actions/Pages 都需独立验收。
+iPhone Safari 和主屏幕 PWA 分别验证：可信 HTTPS 首次缓存/安装、主动剪贴板与拒绝回退、Numbers CSV 引号/中文/德语/日期、本地离线编辑/评分/刷新/关闭重开、文件 JSON 下载/明确恢复、授权刷新、两设备离线分叉及决议后继续。只用独立测试数据验证清空。用户反馈 iOS 26.6 的第1–3项通过，另反馈剪贴板导入正常；对明确询问的在线EN保存刷新、飞行模式编辑刷新也反馈通过，因此第6、8项对应行为记用户报告通过。第4项单次计数、第5项拒绝回退、第7项德语结构字段及第9–14项尚未验证，未从在线/离线编辑推定离线FSRS通过。正式 Pages 网站由工具独立验证，Actions重跑Success由用户反馈，详细日志尚未读取；跨版本SW更新、多标签更新和线上缓存头仍需对应验收。
 
 IndexedDB 可能被系统/用户清理；持久存储申请不能代替备份。系统时钟错误会影响学习 due，旅行时区重新归属当地统计日。900,000 字节云端上限、20 MiB 备份上限、整库验证与事件回放 CPU 均有规模限制，低性能真机尚无性能基准。分片/压缩仅设计。
 
@@ -122,7 +124,9 @@ git config --local filter.public-report.clean "node scripts/public-report-filter
 git config --local filter.public-report.required true
 ```
 
-.gitattributes 仅对 reports/phase-*/*.md 使用该 clean filter。它只处理送入索引的 stdin，不改磁盘原件；不提供还原私人路径的 smudge。其他电脑 checkout 得到的是脱敏公开版本。开发者若更新报告，先配置 filter 再 git add。公开索引检查会拒绝残留本机账号路径、私人邮箱、常见凭证、环境/私库/浏览器/构建产物。CI 也运行这一检查；本机原件不同于发布 blob 是有意的隐私处理。
+.gitattributes 仅对 reports/phase-*/*.md 使用该 clean filter。它只处理送入索引的 stdin，不改磁盘原件；不提供还原私人路径的 smudge。其他电脑 checkout 得到的是脱敏公开版本，已用独立克隆和实际索引检查验证。开发者若更新报告，先配置 filter 再 git add。公开索引检查会拒绝残留本机账号路径、私人邮箱、常见凭证、环境/私库/浏览器/构建产物。CI 也运行这一检查；本机原件不同于发布 blob 是有意的隐私处理。
+
+Git 不传递仓库本地 filter 配置或其 required 标记。新克隆未配置 filter 时，Git 可以按原样暂存新报告，过滤器本身不是完整的防泄漏机制。每次提交前须本地配置并运行 check:public-index，未知内容仍需人工审查；CI 只在 push 后检查，不能阻止已经发生的公开。此检查识别常见凭证/路径模式，不承诺识别所有私人内容。重新添加整个旧工作区或绕过检查前必须再次审查，不能假定文件名属于报告就安全。
 
 ```sh
 git diff --cached --stat
@@ -133,8 +137,12 @@ git status --short --branch
 
 RELEASE_FILES.txt 列出全部待公开相对路径，人工夹具是源码中的合成数据，不是私人词库。只有 .env.example 的公开路径模板允许提交。初次本地提交使用仓库本地 noreply 邮箱，避免把原全局私人邮箱写入公开 Git 作者记录。
 
-用户明确批准后，先重新只读核查远端，再执行普通 `git push -u origin main`。若出现新远端提交、拒绝 non-fast-forward 或目的地变化，停止分析，不能用 force 绕过。Git Credential Manager 已存在；推送权限尚未验证，缺身份时采用其浏览器登录，不在聊天索取密码/PAT。
+用户明确批准后，先重新只读核查远端，再执行普通 `git push -u origin main`。若出现新远端提交、拒绝 non-fast-forward 或目的地变化，停止分析，不能用 force 绕过。Git Credential Manager 已存在；本次普通首次推送已验证写入权限。以后缺身份时采用其浏览器登录，不在聊天索取密码/PAT。
 
 Pages 配置入口：<https://github.com/Polar0216/polar-vocab/settings/pages> → Build and deployment → Source → GitHub Actions。当前工作流保留运行中的 main 部署，PR 可取消陈旧检查；只有 main 非 PR 才上传/发布 Pages artifact。工作流使用 npm ci 和锁文件、固定官方 Action SHA、最小权限，无私人 PAT。
+
+首次普通推送已完成；用户设置 Source 后，在 [首次运行](https://github.com/Polar0216/polar-vocab/actions/runs/38687892583) 的 Re-run jobs 中重跑失败作业，并反馈 attempt 2 Success。初次失败证据为 Configure Pages 404；正式站实际访问也已独立通过。详细日志尚未读取，不能把仅 build 产物存在等同于 deploy 成功。
+
+本次正式站验证复用了现有 shell/vocabulary/review 中18项适用于外部来源的用例，独立Edge profile、人工本地数据，无PAT/私有API。临时配置与补充manifest/SW/TXT脚本曾放在忽略目录，后被上述E2E输出清理误删，不能声称原始临时产物仍完整保留；已经观察到的工具结果如实记录，仓库中原有测试保留。真实HTTPS来源下的成功不能替代修复后私库完整收敛或其余iPhone验收。
 
 真实测试顺序、证据记录与 iPhone 清单见 [REAL_DEVICE_CHECKLIST](REAL_DEVICE_CHECKLIST.md)。本地或模拟通过不能替代上线、CORS/权限及真机验收。
