@@ -71,7 +71,7 @@ npm run test:e2e
 Remove-Item Env:PLAYWRIGHT_CHANNEL
 ```
 
-也可先 npx playwright install chromium 再 npm run test:e2e。自动 trace/截图只写 `reports/test-results/e2e/`，HTML 在 `reports/playwright-report/`（均忽略提交），手写阶段报告在 reports/phase-0～phase-3.5。Playwright 会清理其输出目录，真实验收备份、控制脚本和 profile 必须放在输出目录之外；当前恢复备份位于忽略的 `.cache/phase3.5-real-sync/`。仓库自带的模拟测试使用人工词条与隔离 IndexedDB，请求拦截固定 GitHub 域名，使用人工凭证值。真实私库验收另由用户在正式网页自行输入受限 PAT，不读取或输出凭证，不生成包含凭证的截图/trace。受限沙箱若无法启动本机预览/浏览器，需环境允许后执行，不能标为通过。
+也可先 npx playwright install chromium 再 npm run test:e2e。自动 trace/截图只写 `reports/test-results/e2e/`，HTML 在 `reports/playwright-report/`（均忽略提交），手写阶段报告在 reports/phase-0～phase-3.5。Playwright 会清理其输出目录，真实验收备份、控制脚本和 profile 必须放在输出目录之外；当前恢复备份位于忽略的 `.cache/phase3.5-real-sync/`。仓库自带的模拟测试使用人工词条与隔离 IndexedDB，请求拦截固定 GitHub 域名，使用人工凭证值。真实私库早期验收由用户在正式网页自行输入受限PAT，不生成包含凭证的截图/trace。后续用户在聊天主动提供两枚测试凭证，并明确授权临时测试使用；不在shell参数或文件中传递、不输出值或请求头，凭证未写入项目、备份或公开产物，验收结束后由用户撤销。受限沙箱若无法启动本机预览/浏览器，需环境允许后执行，不能标为通过。
 
 本次首次重跑完整 E2E 时，旧 outputDir 为 `reports/test-results/`，启动清理误删了其中临时实时验收脚本、4份原始JSON备份及acceptance JSONL；该轮已停止、退出1，不算通过。没有删除受跟踪原件或损坏私库数据，也没有暴露PAT。打开的A/B数据已各重新导出一份完整备份到 `.cache/phase3.5-real-sync/`，分别核对5词/2卡/4评分/1墓碑/1决议、pending=0，B保留3份冲突审计；另存恢复元数据。旧临时原始产物不再完整保留，已观察工具输出仍是报告证据。输出目录隔离后的新一轮E2E退出0，31通过/3项有意跳过/34总项，约1.1分钟；配置更改后类型检查和lint亦单独重跑通过。
 
@@ -87,7 +87,7 @@ Remove-Item Env:PLAYWRIGHT_CHANNEL
 
 ## GitHub Pages 与 PWA
 
-.github/workflows/deploy.yml 已有 Node24 检查、静态构建、最小权限 Pages 发布；PR 只验证，main 的授权 push 或手动运行才发布。工作流不读取私人仓库或 PAT。首次获批准 push 已成功，main 跟踪 origin/main，目标为 https://github.com/Polar0216/polar-vocab.git。首次 Configure Pages 404后，用户确认 Source 为 GitHub Actions并重跑，反馈 attempt 2 为 Success；正式站200、18项UI和SW/离线检查由工具独立验证。尚未读取远端详细日志。
+.github/workflows/deploy.yml配置Node24检查及最小权限Pages发布，PR仅验证，不读取私库/PAT。首次push9b138265成功，Configure Pages 404后用户修正Source并重跑；attempt2 Success现已由公开API元数据独立核对。修复提交 `982b023c7158b9e6924c1683f1ed564fd29b8259` 普通推送成功；[运行38702050828](https://github.com/Polar0216/polar-vocab/actions/runs/38702050828)与build/deploy均success，逐步元数据确认Linux类型/lint/单元/构建/安全/公开索引及Chromium E2E成功。未读取原始日志或声称CI测试数量。正式站首次18项UI及SW证据不替代修复后F/G完整复验。
 
 首次 push 获批准后，在已有仓库的 Settings → Pages → Build and deployment → Source 选 GitHub Actions，并检查 Pages 环境规则。CI 默认 /<仓库名>/，用户根站或自定义域名在 Actions Variables 设公开 PAGES_BASE_PATH=/。Token 绝不放 VITE_*、.env 或 Actions。
 
@@ -107,9 +107,13 @@ CSP 在生产 HTML 注入：script/self、connect/self + api.github.com、object
 
 ## 真实多端与设备（部分待验收）
 
-先按 [GITHUB_SETUP](GITHUB_SETUP.md) 仅对专用私有测试仓库验证 Contents/CORS/版本/权限/分支规则、双设备和撤销凭证，禁止把 PAT 发进聊天、日志或仓库。[故障手册](SYNC_TROUBLESHOOTING.md) 说明恢复、锁、限流和容量。2026-10-15 实测：早期网络错误后从原批次恢复，A–E 已在两个独立 Edge profile 与真实私库通过。F 的墓碑/审计及 G 的分叉、调度阻止、Again 决议和真实到期后后继 Good 已核对；旧版完整集合五轮同步发现删除修订不收敛。当前补丁专项20/20通过、单文件lint为0，`npm run check` 退出0（类型、lint、17文件227测试、Pages构建、产物及凭证检查）。修复尚未提交/部署，F/G正式站完整收敛仍未验证；H尚未执行，不能将本地回归替代真实验收。
+按[GITHUB_SETUP](GITHUB_SETUP.md)仅对人工私库验收，不输出或持久化PAT。修复专项20/20、check227及E2E31/3通过后发布982b023，08:09:52UTC原记录F/G全量一致，A–G真实通过。H幂等、收词冻结批次F1已确认/L1后写仍保留、评分F1已确认/L2事件+卡片仍保留并最终两端收敛均通过；同profile的A2标签被同步租约正确阻止，无多余PUT。门闩控制Node曾Route already handled中断，重启后A7词且冻结批次/后写pending保留，重新授权从原批次恢复为两端7词；修正忽略的路由工具后重新测试ACK，未把旧中断追记通过。离线新增/刷新保留全部存储记录和原pending ID通过；随后用户明确授权临时测试凭证，经一次性内存通道交给原A/B网页，实际只读预检、备份确认、原pending同步及最终收敛通过。12:09:43UTC两端各14词/3卡/5评分，原事件ID唯一保留，全部共享集合与SHA一致、pending/冲突/活动任务均0。真实401未观测到且用户选择保留未验证，因此H仍部分通过；普通重授权不替代401。
 
-iPhone Safari 和主屏幕 PWA 分别验证：可信 HTTPS 首次缓存/安装、主动剪贴板与拒绝回退、Numbers CSV 引号/中文/德语/日期、本地离线编辑/评分/刷新/关闭重开、文件 JSON 下载/明确恢复、授权刷新、两设备离线分叉及决议后继续。只用独立测试数据验证清空。用户反馈 iOS 26.6 的第1–3项通过，另反馈剪贴板导入正常；对明确询问的在线EN保存刷新、飞行模式编辑刷新也反馈通过，因此第6、8项对应行为记用户报告通过。第4项单次计数、第5项拒绝回退、第7项德语结构字段及第9–14项尚未验证，未从在线/离线编辑推定离线FSRS通过。正式 Pages 网站由工具独立验证，Actions重跑Success由用户反馈，详细日志尚未读取；跨版本SW更新、多标签更新和线上缓存头仍需对应验收。
+旧profile因先前清理后存储访问失败而AbortError，实际失败不当正常SW更新通过。保留旧目录、关闭/中断旧会话，新 `.cache/phase3.5-real-sync/fixed-profile-A/`、`fixed-profile-B/` 经空库备份及正常UI恢复原JSON，原事件ID/审计保留、新本机身份不同；撤销连接/SHA后用户自行预检/确认同一私库，原F/G已通过。后来H控制工具中断也保留原批次与后写操作，真实进程重启恢复已验证；无需清库/重建远端或提取/注入凭证。
+
+iPhone真机仅用独立人工数据。用户反馈iOS26.6的第1–3、6、8通过，另对明确询问的离线Good评分及关闭重开反馈通过，因此第9、10项也记用户报告通过。第4项剪贴板导入正常但单次计数未知，第5项拒绝回退、第7项德语结构字段、第14项跨版本更新尚未验证；用户明确暂缓第11–13项真机同步，继续保留未验证，本轮不再催促。公开Actions元数据已独立核对，原始日志未读；桌面旧profile更新失败不替代正常SW升级。本轮可执行部分结案，整体尚未完整验收，不进入Phase4。
+
+收尾 `verify-local.mjs` 实际通过6原件哈希、39相对链接、141条清单、25份JSON产物、21份完整备份及19个匹配SHA的canonical远端基线检查，无识别PAT/凭证字段/远端local-only字段且均被忽略。已关闭控制器，并经沙箱外检查确认进程退出，Node REPL内存已reset；这不替代用户在GitHub撤销临时测试凭证。后续新增文件或文档提交需重新做相应公开检查。
 
 IndexedDB 可能被系统/用户清理；持久存储申请不能代替备份。系统时钟错误会影响学习 due，旅行时区重新归属当地统计日。900,000 字节云端上限、20 MiB 备份上限、整库验证与事件回放 CPU 均有规模限制，低性能真机尚无性能基准。分片/压缩仅设计。
 
@@ -141,7 +145,7 @@ RELEASE_FILES.txt 列出全部待公开相对路径，人工夹具是源码中�
 
 Pages 配置入口：<https://github.com/Polar0216/polar-vocab/settings/pages> → Build and deployment → Source → GitHub Actions。当前工作流保留运行中的 main 部署，PR 可取消陈旧检查；只有 main 非 PR 才上传/发布 Pages artifact。工作流使用 npm ci 和锁文件、固定官方 Action SHA、最小权限，无私人 PAT。
 
-首次普通推送已完成；用户设置 Source 后，在 [首次运行](https://github.com/Polar0216/polar-vocab/actions/runs/38687892583) 的 Re-run jobs 中重跑失败作业，并反馈 attempt 2 Success。初次失败证据为 Configure Pages 404；正式站实际访问也已独立通过。详细日志尚未读取，不能把仅 build 产物存在等同于 deploy 成功。
+首次运行[38687892583](https://github.com/Polar0216/polar-vocab/actions/runs/38687892583)的Configure Pages 404及用户修正Source/重跑均保留历史；attempt2已由API元数据确认success。修复运行[38702050828](https://github.com/Polar0216/polar-vocab/actions/runs/38702050828)对应982b023，build/deploy均由API独立确认成功。元数据成功不等于已经读取原始日志，也不替代F/G及正常SW更新的行为验收。
 
 本次正式站验证复用了现有 shell/vocabulary/review 中18项适用于外部来源的用例，独立Edge profile、人工本地数据，无PAT/私有API。临时配置与补充manifest/SW/TXT脚本曾放在忽略目录，后被上述E2E输出清理误删，不能声称原始临时产物仍完整保留；已经观察到的工具结果如实记录，仓库中原有测试保留。真实HTTPS来源下的成功不能替代修复后私库完整收敛或其余iPhone验收。
 

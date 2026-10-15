@@ -2,7 +2,7 @@
 
 个人英语、德语词汇收集与间隔复习系统，目标是 GitHub Pages 静态 PWA + IndexedDB 本地优先 + 独立 GitHub 私有数据仓库。无需自建服务器、Serverless 或云数据库。
 
-**当前版本实现 Phase 3 GitHub 私有仓库同步；Phase 3.5 已完成首次公开部署和真实私库 A–E 验收。删除修订收敛修复已通过本地227项测试及构建检查，尚未发布；F/G 线上完整复验与 H 仍未完成。** 支持英德词汇收集、整理、文件与剪贴板导入、导出备份；从已整理词条明确创建词义卡，翻卡后通过四级自评安排下次复习，查看任务与历史。数据、设置和待同步操作均保存到 IndexedDB，首次缓存完成后可离线使用。
+**当前实现Phase3私库同步；修复982b023已普通推送/部署，A–G正式站真实通过。H的幂等、收词/评分精确ACK、进程恢复、跨标签锁、离线刷新与替代凭证重授权收敛均已通过；真实401按用户选择未验证，iPhone11–13真机同步由用户暂缓，其他未测项仍保留。Phase3.5本轮可执行部分结案，整体尚未完整验收，不进入Phase4。** 支持英德词汇收集、整理、文件/剪贴板导入、备份及四级FSRS自评；数据、设置和待同步操作在IndexedDB，首次缓存后可离线使用。
 
 FSRS 使用锁定的 ts-fsrs 5.4.2，卡片、评分事件和待同步操作原子保存。GitHub Contents API、内存 PAT、三方合并、持久化批次与冲突决议已经接入。Windows 客户端和 iOS 快捷指令仍未实现。
 
@@ -61,7 +61,7 @@ Windows 已安装 Edge 时，也可使用 PowerShell `$env:PLAYWRIGHT_CHANNEL='m
 
 本机替换恢复会拒绝未知版本、损坏引用、同事件 ID 不同内容，以及会丢失已有删除证据的旧备份。恢复预览后如果词库被其他页面修改，需要重新预览。当前不提供合并恢复。
 
-CSV/TXT/XLSX 最大 5 MiB、5,000 行；XLSX 另外限制实际解压体积、条目和行列范围。JSON 完整备份最大 20 MiB。iPhone 使用 Safari 主动点击「从剪贴板导入」，权限受限时长按文本框粘贴；用户已反馈 iOS 26.6 下导航、安装、独立应用布局、剪贴板导入、在线 EN 保存后刷新及飞行模式编辑后刷新正常。单次导入计数、拒绝回退、德语结构字段、离线 FSRS 等项目仍需按真机清单逐项验证。
+CSV/TXT/XLSX 最大 5 MiB、5,000 行；XLSX 另外限制实际解压体积、条目和行列范围。JSON 完整备份最大 20 MiB。iPhone 使用 Safari 主动点击「从剪贴板导入」，权限受限时长按文本框粘贴；用户反馈iOS26.6下导航/安装/布局、剪贴板导入、在线与离线编辑刷新、离线Good评分及关闭重开正常。第11–13项真机授权/多端同步由用户暂缓，仍未验证；单次导入计数、拒绝回退、德语结构字段和跨版本更新等未测项不扩展为通过。
 
 ## 使用本地复习
 
@@ -76,9 +76,9 @@ JSON 备份包含真实 FSRS 状态及完整复习事件，恢复时核验实际
 
 ## 数据与部署边界
 
-公开仓库只存网站代码、文档、静态图标和人工测试样例。私人词库、复习记录和 PAT 不得放入本项目、公开构建或任何 `VITE_*` 环境变量。Token 只由用户在设置页面输入并在内存中使用，刷新后重新授权。不会写入浏览器持久存储、备份、URL、日志或 SW 缓存。
+公开仓库只存网站代码、文档、静态图标和人工测试样例。私人词库、复习记录和 PAT 不得放入本项目、公开构建或任何 `VITE_*` 环境变量。应用通过设置页面接收Token并在内存中使用，刷新后重新授权；不会写入浏览器持久存储、备份、URL、日志或SW缓存。本轮用户曾在聊天主动提供两枚测试凭证，随后明确授权临时测试使用；凭证未写入项目、备份或公开产物，验收结束后需用户撤销。事件和待验证状态见[Phase3.5报告](reports/phase-3.5/PHASE3_5_REPORT.md)。
 
-`.github/workflows/deploy.yml` 已配置检查、构建和 Pages 发布。Phase 3.5 首次普通 push 已获明确批准并成功，首次远端 main 为 `9b138265ebf1d6ab8868e6d0f80e6193bcc4c268`。首次运行在 Configure Pages 以404失败；用户设置 Source 并重跑后，反馈 attempt 2 为 Success。正式站已由工具独立验证返回200，通过18项正式站 UI 验收及 SW/离线检查；未读取远端详细日志。PR 仅验证。
+`.github/workflows/deploy.yml`配置检查/构建/Pages发布，PR仅验证。首次9b138265及修复[982b023](https://github.com/Polar0216/polar-vocab/commit/982b023c7158b9e6924c1683f1ed564fd29b8259)均普通push成功；首次attempt2、新[38702050828](https://github.com/Polar0216/polar-vocab/actions/runs/38702050828)的build/deploy及构建步骤success由API独立核对。未读原始日志或推定CI数量；首次正式18项UI/SW、修复后原记录F/G全量稳定分别有真实证据。
 
 生产 `base` 默认 `/polar-vocab/`，CI 根据仓库名生成；个人根站点或自定义域名须设 `PAGES_BASE_PATH=/`。完整方法见开发文档。项目代码暂为 `UNLICENSED`，公开分发前由项目所有者选择许可；第三方库许可见依赖表。
 
@@ -92,13 +92,13 @@ JSON 备份包含真实 FSRS 状态及完整复习事件，恢复时核验实际
 
 远端是 `polar-vocab-state` 协议 1 / schema 1；本机备份是独立 LocalBackup v2，旧 v1 备份经显式包装迁移读取。Dexie v3 无清库升级。单快照上限 900,000 UTF-8 字节，720,000 起预警，绝不截断历史。
 
-[故障排查](docs/SYNC_TROUBLESHOOTING.md) · [Phase 3 实施报告](reports/phase-3/PHASE3_REPORT.md)。正式 Pages 网站及本地功能已实测。早期网络错误后保留原批次恢复，A–E 真实通过。F/G 的删除证据、审计与实际到期后复习链正确，但旧版五轮同步暴露删除修订不收敛；修复已通过本地20项专项回归及227项完整检查，正式发布后仍需复验，H 尚未执行。iPhone 1–3、6、8为用户通过反馈，第4项部分通过，其余待测。一次 E2E 输出目录误清理后，已重导出两端数据并将验收备份移至忽略的 `.cache/phase3.5-real-sync/`；事件及旧产物缺失范围见报告。Token 由用户在网页自行输入，不进入 Phase 4。
+[故障排查](docs/SYNC_TROUBLESHOOTING.md) · [Phase3报告](reports/phase-3/PHASE3_REPORT.md)。A–G真实通过；H的幂等、冻结上传期间收词/评分精确ACK、控制进程中断后的原批次恢复、同profile A2同步锁、离线刷新及替代凭证重授权均通过。最终A/B各14词/3卡/5评分，共享集合与SHA一致，原事件ID唯一保留，pending/冲突/活动任务均为0；真实401按用户选择保留未验证，因此H仍记部分通过。旧profile更新AbortError、E2E误清理及门闩工具Route already handled均留档；修正工具后重新执行验证，不将旧失败追记为通过。恢复保留原记录和审计，不当作正常SW更新通过。iPhone1–3、6、8–10用户反馈通过，第4部分，11–13由用户暂缓，其余待测。控制器已关闭并确认退出、内存已重置；不替代用户撤销临时凭证，不进入Phase4。
 
 ## Phase 3.5 首次发布与验收进度
 
 - 公开代码仓库：[Polar0216/polar-vocab](https://github.com/Polar0216/polar-vocab)。
 - 正式站点：[Polar Vocab](https://polar0216.github.io/polar-vocab/)，HTTP200、18项正式站 UI 验收、PWA/离线检查通过；这些结果不替代真实私有 API 和 iPhone 验收。
-- 唯一私有测试目标：`Polar0216/polar-vocab-data-test`。用户在网站设置手动输入仅此仓库的受限 PAT；不发送到聊天。
+- 唯一私有测试目标：`Polar0216/polar-vocab-data-test`。早期由用户在网站手动输入受限PAT；本轮最终恢复经用户明确授权，通过一次性内存通道交给原A/B网页。日常仍应仅在可信网页输入，不发送到聊天。
 - [首次部署与验收报告](reports/phase-3.5/PHASE3_5_REPORT.md) · [首次发布文件清单](reports/phase-3.5/RELEASE_FILES.txt) · [真实多端与 iPhone 清单](docs/REAL_DEVICE_CHECKLIST.md)。
 
 本地历史报告原件不改写。Git clean filter 仅将它们的待公开 blob 中本机工作区路径替换为 `<project-root>`；已实测独立克隆取得脱敏版本。过滤器本地配置不会随克隆传递，未来提交新内容前按开发文档配置过滤器，并执行 `npm run check:public-index`；推送后 CI 无法撤回已经公开的信息。依赖、构建、浏览器产物、个人配置与私人数据不提交。
