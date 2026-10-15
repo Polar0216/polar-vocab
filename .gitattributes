@@ -1,0 +1,3 @@
+# Clean only the staged/public copy. Existing local historical reports stay byte-for-byte intact.
+reports/phase-*/*.md filter=public-report
+*.png binary

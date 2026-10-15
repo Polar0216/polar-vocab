@@ -1,0 +1,36 @@
+node_modules/
+dist/
+coverage/
+reports/test-results/
+reports/playwright-report/
+.env
+.env.*
+!.env.example
+*.local
+*.tsbuildinfo
+# Private data belongs in a separate private repository.
+data/
+captures/
+backups/
+*.log
+.DS_Store
+# Local credentials, browser profiles and scratch output are never public source.
+.codex/
+.agents/
+.cache/
+.auth/
+playwright/.auth/
+browser-profiles/
+test-results/
+playwright-report/
+*.pem
+*.key
+*.p12
+*.pfx
+*.sqlite
+*.sqlite3
+*.db
+*.tmp
+*.bak
+Thumbs.db
+Desktop.ini

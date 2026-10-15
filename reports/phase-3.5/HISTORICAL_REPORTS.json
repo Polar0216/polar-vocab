@@ -1,0 +1,42 @@
+{
+  "checkedOn": "2026-10-15",
+  "note": "Original local files remain unchanged; public Git report blobs redact local project paths. No private content is included in this digest record.",
+  "files": [
+    {
+      "path": "docs/PROJECT_PLAN.md",
+      "originalSha256": "65FF8BA7FADC81A7EBDB8352D7824D012144CCCD986E2294F141D39442FD45AA",
+      "publicSha256": "65FF8BA7FADC81A7EBDB8352D7824D012144CCCD986E2294F141D39442FD45AA",
+      "publicPathRedaction": false
+    },
+    {
+      "path": "docs/reference/Polar_Vocab项目规划书.md",
+      "originalSha256": "65FF8BA7FADC81A7EBDB8352D7824D012144CCCD986E2294F141D39442FD45AA",
+      "publicSha256": "65FF8BA7FADC81A7EBDB8352D7824D012144CCCD986E2294F141D39442FD45AA",
+      "publicPathRedaction": false
+    },
+    {
+      "path": "reports/phase-0/PHASE0_REPORT.md",
+      "originalSha256": "9C20CD6F9151BBF75B49594D8758B96DE83F93A790155E46892ADDD765C8E2B3",
+      "publicSha256": "9C20CD6F9151BBF75B49594D8758B96DE83F93A790155E46892ADDD765C8E2B3",
+      "publicPathRedaction": false
+    },
+    {
+      "path": "reports/phase-1/PHASE1_REPORT.md",
+      "originalSha256": "54CE8AA6D04B8391D7EC0A578D4A99E06EF2072DE3D13B05B10FBA765E30D380",
+      "publicSha256": "91F49AD3920F1619013FF78A2F089E885A5A5802EEA85739050F86D860B3DB6C",
+      "publicPathRedaction": true
+    },
+    {
+      "path": "reports/phase-2/PHASE2_REPORT.md",
+      "originalSha256": "28377684E00C318BF3F260540CBC14F4E65D061993AA8CD169D15EC3AD052109",
+      "publicSha256": "5D1BCE8F1F598FB099C6EA49A07F583647E7945607A2C03E5D84740E60758779",
+      "publicPathRedaction": true
+    },
+    {
+      "path": "reports/phase-3/PHASE3_REPORT.md",
+      "originalSha256": "268088152BF9DE7C927441BCC5F0A10BC0E2CA28743D03FDC8705FBCD2B25D00",
+      "publicSha256": "3DC700C01734FEB95CB07FFB7C7F05B7D3DD69187B6440C9441705B0650F72BE",
+      "publicPathRedaction": true
+    }
+  ]
+}
