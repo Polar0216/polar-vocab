@@ -4,9 +4,9 @@
 
 先阅读 [Windows 使用说明](WINDOWS_CAPTURE.md) 与 [采集协议](CAPTURE_PROTOCOL.md)。本阶段只用 `Polar0216/polar-vocab-data-test` / `main` 人工数据，不初始化或清空已有主快照，不删除旧词条、卡片、评分、冲突、决议及批次。
 
-生成新的有限期 Fine-grained PAT：Resource owner=Polar0216，Only select repositories 仅选该私库，Contents=Read and write，Metadata默认只读，不加其他权限。不要复用已暴露旧凭证，不要发到聊天、文件、截图或日志。桌面设置中本人输入凭证，测试连接（只读），核对目标后明确确认。凭证只在当前进程内存保存，退出后重新输入，没有记住设备功能。
+使用仍有效、权限符合要求的有限期 Fine-grained PAT；已有凭证符合时无需新建：Resource owner=Polar0216，Only select repositories 仅选该私库，Contents=Read and write，Metadata默认只读，不加其他权限。不要发到聊天、文件、截图或日志。桌面设置中本人输入凭证，测试连接（只读），核对目标后明确确认。凭证只在当前进程内存保存，退出后重新输入，没有记住设备功能。本轮真实私库实测已由用户暂缓，以下为以后主动恢复时的操作说明。
 
-桌面手动/显式自动同步只创建 `captures/{deviceId}/{YYYY-MM}/{batchId}.json`，不写 `data/state.json`。正式站部署Phase4后，在生词箱检查、预览、确认接收，再由原Web同步引擎保存正式词库。当前本地实现不代表正式站已具备新入口。首次Phase4公开push前须报告实际文件、安全扫描与构建结果；未获确认不推送，不创建Release。
+桌面手动/显式自动同步只创建 `captures/{deviceId}/{YYYY-MM}/{batchId}.json`，不写 `data/state.json`。正式站已部署Phase4接收入口：在生词箱检查、预览、确认接收，再由原Web同步引擎保存正式词库。线上基础页面检查通过，真实私库全链路仍未验证。首次Phase4公开push已获用户授权并普通推送，Actions及Pages成功；未创建Release或上传exe。
 
 下文保留Phase3/3.5主同步操作与历史状态，未测iPhone/401/SW项目不自动升级为通过。
 
