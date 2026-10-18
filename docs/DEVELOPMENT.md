@@ -41,7 +41,7 @@ Windows构建需 `%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe`、UIAut
 
 现有Phase3.5资料不迁移、不清空。测试只写全新合成数据库；验收用专用 `POLAR_VOCAB_CAPTURE_DATA_DIR` 覆盖默认AppData，不操作日常队列。导出不覆盖已有备份。桌面E2E/打包只在Windows本机执行；Linux Pages增加共享/SQLite单元测试，不冒充Windows实测。
 
-首次公开Phase4前审查实际索引/清单、秘密模式、SQLite/profile/产物忽略、历史报告clean-only filter、npm audit、Pages及桌面产物。向用户报告后再普通push，不force；不把exe作为源码Gitblob，不自动创建GitHub Release。锁文件dry-run出现Tailwind可选WASM捆绑peer告警，当前原生Windows构建通过；Linux CI仍待远程执行。
+首次公开Phase4前审查实际索引/清单、秘密模式、SQLite/profile/产物忽略、历史报告clean-only filter、npm audit、Pages及桌面产物。向用户报告后再普通push，不force；不把exe作为源码Gitblob，不自动创建GitHub Release。首次Linux CI使用Node24.21.0/npm11.19.0，发现旧锁文件缺失Tailwind WASM包内捆绑的两个emnapi依赖；已用npm11.19.0在无node_modules的隔离目录重生成锁，并实际ci安装成功，不改变直接依赖版本。不要用旧npm的dry-run代替干净安装。再生锁推荐同版本 `npx --yes npm@11.19.0 install --package-lock-only --ignore-scripts`，随后实际 `npx --yes npm@11.19.0 ci`；本轮Linux远端复验结果见报告。
 
 ## 依赖与许可证
 

@@ -1,6 +1,6 @@
 # Phase 4 Windows 收词器实施与发布前报告
 
-日期：2026-10-18。范围：Phase4A–4F，本地代码、Windows便携产物、共享采集协议及Web接收；不进入Phase5。**当前为本地交付、首次公开发布前待确认；真实GitHub采集端到端尚未完成，不能标记Phase4全面验收通过。**
+日期：2026-10-18。范围：Phase4A–4F，本地代码、Windows便携产物、共享采集协议及Web接收；不进入Phase5。**用户已授权公开推送，2e1bf51已普通推送；部署进度见第16节。真实GitHub采集端到端尚未完成，不能标记Phase4全面验收通过。** 下文1–15节保留发布前验收截面，第16节的后续实际结果优先。
 
 ## 1. 实际技术栈与项目组织
 
@@ -151,3 +151,11 @@ Pages新版本与Windows10、SmartScreen、低性能机器、外部软件兼容�
 先完成本阶段发布确认及真实采集链路，修复任何新发现问题，再补Windows兼容矩阵。Phase5可另行授权后设计iOS快捷指令/Numbers收词与更高级词典Provider；不在此轮自动开始，不要求恢复iPhone测试，不清理任何现有环境。
 
 详细使用见 [WINDOWS_CAPTURE](../../docs/WINDOWS_CAPTURE.md)，协议见 [CAPTURE_PROTOCOL](../../docs/CAPTURE_PROTOCOL.md)，故障见 [DESKTOP_TROUBLESHOOTING](../../docs/DESKTOP_TROUBLESHOOTING.md)。
+
+## 16. 授权后的真实发布记录
+
+用户明确授权普通推送及Web部署后，重新核对175文件索引/秘密模式/清单与远端main=d6665ee，通过 `git push -u origin main` 正常更新至2e1bf51，无force、Release或exe上传，未请求真实私库。
+
+首次 [Actions 39112883335](https://github.com/Polar0216/polar-vocab/actions/runs/39112883335) 失败，deploy跳过。已读取真实原始作业日志：Ubuntu24.04、Node24.21.0/npm11.19.0，在npm ci阶段EUSAGE，缺少@emnapi/core/runtime；不是Pages Source问题。旧npm11.6 dry-run遗漏此问题，不能据旧结果宣称跨平台干净安装通过。
+
+在全新隔离目录用CI同版本npm11.19.0重生成复制的锁文件，补回Tailwind WASM实际捆绑的@emnapi/core/runtime1.11.1及peer元数据；直接依赖与Electron版本不变。实际 `npx --yes npm@11.19.0 ci` 成功安装721包，提示两个未覆盖allowScripts的安装脚本与旧依赖弃用告警，未通过放宽安全策略绕过。在线audit仍0已知漏洞，Pages本机构建通过。原锁/错误选摘/完整隔离安装保留在忽略的 `.cache/phase4-publication/`，不清理旧资料。修复后远端CI和正式站结果继续记录，未通过前不标为部署成功。

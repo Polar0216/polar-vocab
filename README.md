@@ -2,7 +2,7 @@
 
 个人英语、德语词汇收集与间隔复习系统，目标是 GitHub Pages 静态 PWA + IndexedDB 本地优先 + 独立 GitHub 私有数据仓库。无需自建服务器、Serverless 或云数据库。
 
-**当前开发 Phase 4 Windows 收词器。** 本地源码包含快捷键选词、英德翻译、SQLite 队列、不可变采集上传和 Web 接收。Phase 4 尚未公开推送或部署，正式站仍为此前版本；逐项验收及未验证项目见 [Phase 4 报告](reports/phase-4/PHASE4_REPORT.md)。Phase 3.5 的真实401、iPhone同步及正常跨版本更新仍未验证；用户另行授权 Phase 4，不继续要求 iPhone 验收。原有测试环境与历史资料保留。
+**当前开发 Phase 4 Windows 收词器。** 源码包含快捷键选词、英德翻译、SQLite 队列、不可变采集上传和 Web 接收。2e1bf51已获授权并普通推送；首次CI因锁文件缺失可选依赖失败，修复及部署进度见 [Phase 4 报告](reports/phase-4/PHASE4_REPORT.md)，目前不能称正式站接收已验收。Phase 3.5 的真实401、iPhone同步及正常跨版本更新仍未验证；用户另行授权 Phase 4，不继续要求 iPhone 验收。原有测试环境与历史资料保留。
 
 FSRS 使用锁定的 ts-fsrs 5.4.2，卡片、评分事件和待同步操作原子保存。GitHub Contents API、内存 PAT、三方合并、持久化批次与冲突决议已经接入。Windows 仅上传采集，不写主快照或复习状态；iOS 原生快捷指令未实现。
 
