@@ -2,7 +2,7 @@
 
 个人英语、德语词汇收集与间隔复习系统，目标是 GitHub Pages 静态 PWA + IndexedDB 本地优先 + 独立 GitHub 私有数据仓库。无需自建服务器、Serverless 或云数据库。
 
-**当前为 Phase 4 Windows 收词器。** 源码包含快捷键选词、英德翻译、SQLite 队列、不可变采集上传和 Web 接收。获授权普通推送后，首次CI的可选依赖锁问题已在d6c71d2修复，Actions构建与部署成功；[正式网站](https://polar0216.github.io/polar-vocab/)通过16项公开页面检查。真实私库采集全链路尚未完成，详见 [Phase 4 报告](reports/phase-4/PHASE4_REPORT.md)。Phase 3.5 的真实401、iPhone同步及正常跨版本更新仍未验证；用户另行授权 Phase 4，不继续要求 iPhone 验收。原有测试环境与历史资料保留。
+**当前为 Phase 4 Windows 收词器。** 源码包含快捷键选词、英德翻译、SQLite 队列、不可变采集上传和 Web 接收。获授权普通推送后，首次CI的可选依赖锁问题已在d6c71d2修复，Actions构建与部署成功；[正式网站](https://polar0216.github.io/polar-vocab/)通过16项公开页面检查。真实私库采集全链路由用户暂缓，仍未验证，详见 [Phase 4 报告](reports/phase-4/PHASE4_REPORT.md)。Phase 3.5 的真实401、iPhone同步及正常跨版本更新仍未验证；用户另行授权 Phase 4，不继续要求 iPhone 验收。原有测试环境与历史资料保留。
 
 FSRS 使用锁定的 ts-fsrs 5.4.2，卡片、评分事件和待同步操作原子保存。GitHub Contents API、内存 PAT、三方合并、持久化批次与冲突决议已经接入。Windows 仅上传采集，不写主快照或复习状态；iOS 原生快捷指令未实现。
 
@@ -94,7 +94,7 @@ JSON 备份包含真实 FSRS 状态及完整复习事件，恢复时核验实际
 
 ## 数据与部署边界
 
-公开仓库只存网站代码、文档、静态图标和人工测试样例。私人词库、复习记录和 PAT 不得放入本项目、公开构建或任何 `VITE_*` 环境变量。应用通过设置页面接收Token并在内存中使用，刷新后重新授权；不会写入浏览器持久存储、备份、URL、日志或SW缓存。本轮用户曾在聊天主动提供两枚测试凭证，随后明确授权临时测试使用；凭证未写入项目、备份或公开产物，验收结束后需用户撤销。事件和待验证状态见[Phase3.5报告](reports/phase-3.5/PHASE3_5_REPORT.md)。
+公开仓库只存网站代码、文档、静态图标和人工测试样例。私人词库、复习记录和 PAT 不得放入本项目、公开构建或任何 `VITE_*` 环境变量。应用通过设置页面接收Token并在内存中使用，刷新后重新授权；不会写入浏览器持久存储、备份、URL、日志或SW缓存。Phase3.5验收时用户曾在聊天主动提供测试凭证并授权临时使用，历史处理和待验证状态见[Phase3.5报告](reports/phase-3.5/PHASE3_5_REPORT.md)；该轮凭证未写入项目、备份或公开产物。Phase4未复用聊天中的凭证，当前私库实测由用户暂缓。
 
 `.github/workflows/deploy.yml`配置检查/构建/Pages发布，PR仅验证。首次9b138265及修复[982b023](https://github.com/Polar0216/polar-vocab/commit/982b023c7158b9e6924c1683f1ed564fd29b8259)均普通push成功；首次attempt2、新[38702050828](https://github.com/Polar0216/polar-vocab/actions/runs/38702050828)的build/deploy及构建步骤success由API独立核对。未读原始日志或推定CI数量；首次正式18项UI/SW、修复后原记录F/G全量稳定分别有真实证据。
 
@@ -116,7 +116,7 @@ JSON 备份包含真实 FSRS 状态及完整复习事件，恢复时核验实际
 
 - 公开代码仓库：[Polar0216/polar-vocab](https://github.com/Polar0216/polar-vocab)。
 - 正式站点：[Polar Vocab](https://polar0216.github.io/polar-vocab/)，HTTP200、18项正式站 UI 验收、PWA/离线检查通过；这些结果不替代真实私有 API 和 iPhone 验收。
-- 唯一私有测试目标：`Polar0216/polar-vocab-data-test`。早期由用户在网站手动输入受限PAT；本轮最终恢复经用户明确授权，通过一次性内存通道交给原A/B网页。日常仍应仅在可信网页输入，不发送到聊天。
+- 唯一私有测试目标：`Polar0216/polar-vocab-data-test`。Phase3.5早期由用户在网站手动输入受限PAT，该轮最终恢复经用户明确授权，通过一次性内存通道交给原A/B网页。日常仍应仅在可信网页输入，不发送到聊天；Phase4受控验收窗口未建立授权会话。
 - [首次部署与验收报告](reports/phase-3.5/PHASE3_5_REPORT.md) · [首次发布文件清单](reports/phase-3.5/RELEASE_FILES.txt) · [真实多端与 iPhone 清单](docs/REAL_DEVICE_CHECKLIST.md)。
 
 本地历史报告原件不改写。Git clean filter 仅将它们的待公开 blob 中本机工作区路径替换为 `<project-root>`；已实测独立克隆取得脱敏版本。过滤器本地配置不会随克隆传递，未来提交新内容前按开发文档配置过滤器，并执行 `npm run check:public-index`；推送后 CI 无法撤回已经公开的信息。依赖、构建、浏览器产物、个人配置与私人数据不提交。

@@ -1,6 +1,6 @@
 # Phase 4 Windows 收词器实施与发布报告
 
-日期：2026-10-18。范围：Phase4A–4F，本地代码、Windows便携产物、共享采集协议及Web接收；不进入Phase5。**用户已授权普通推送及Web部署，d6c71d2的Actions构建/部署成功，正式网站16项检查通过。真实GitHub采集端到端尚未完成，不能标记Phase4全面验收通过。** 下文1–15节保留发布前验收截面，第16节的后续实际结果优先；其中尚未部署、未获推送授权等描述仅反映当时状态。
+日期：2026-10-18。范围：Phase4A–4F，本地代码、Windows便携产物、共享采集协议及Web接收；不进入Phase5。**用户已授权普通推送及Web部署，d6c71d2及40036c4的Actions构建/部署成功，正式网站16项检查通过。真实GitHub采集端到端由用户暂缓，仍未验证，不能标记Phase4全面验收通过。** 第16节保留首次发布失败、修复与后续成功的实际过程；待测项不扩展为通过。
 
 ## 1. 实际技术栈与项目组织
 
@@ -86,11 +86,11 @@ HTTP适配器的成功、丢响应/重启/同文件确认、碰撞拒绝、401�
 
 确认调用既有service.ingest：原事件、派生词条、摄取回执和pending原子写入；默认inbox，无卡片或评分。重复事件跳过、不覆盖之后人工修改，不删除云端批次。正式词库由原Phase3引擎合并/上传，主协议未改版。
 
-10项共享协议/HTTP/摄取单元测试通过；桌面与手机模拟各1项浏览器接收测试通过，验证预览不提前导入、重复回执、保留编辑、待整理及原同步上传，cards/reviewEvents均未新增。正式网站尚未部署此接收入口。
+10项共享协议/HTTP/摄取单元测试通过；桌面与手机模拟各1项浏览器接收测试通过，验证预览不提前导入、重复回执、保留编辑、待整理及原同步上传，cards/reviewEvents均未新增。正式网站已部署此入口，未授权保护通过；真实私库接收仍未验证。
 
 ## 9. Token与发布安全
 
-不复用聊天暴露的旧PAT。本阶段尚未输入新的私库凭证，未对真实私库发出请求。PAT仅当前进程/页面内存，预检输入框清空，取消预检/断开/退出清除相应客户端；无记住设备、明文文件、URL、日志或导出Token。
+未将聊天中的PAT复制到文件、命令或受控验收页面。用户选择可沿用已有有效受限PAT，随后明确暂缓实测；本次受控两端实际未形成预检/授权会话，未执行真实采集上传。PAT仅当前进程/页面内存，预检输入框清空，取消预检/断开/退出清除相应客户端；无记住设备、明文文件、URL、日志或导出Token。
 
 Electron contextIsolation/sandbox开启，Node关闭，受限具名preload、IPC来源与输入校验、自定义本地协议、CSP connect-src none、权限默认拒绝、外部固定官网链接、禁止任意导航/弹窗。Windows选词不是shell命令。真实运行时测试确认渲染器没有require/process能力。
 
@@ -121,7 +121,7 @@ Electron contextIsolation/sandbox开启，Node关闭，受限具名preload、IPC
 | `npm audit --json --fetch-retries=0 --fetch-timeout=20000` | 在线审计0个已知漏洞（821项审计依赖计数含平台可选项） |
 | `npm ci --dry-run --ignore-scripts --audit=false` | dry-run退出0；Tailwind可选WASM捆绑peer告警，不声称完整干净重装或Linux CI已通过 |
 | `.cache/phase4-preservation/inspect-release.mjs` | 40历史文件哈希未变，实际asar识别模式扫描通过；原计划/reference Git差异为空 |
-| `git ls-remote origin refs/heads/main` | 只读得到d6665ee，未做远端写入 |
+| `git ls-remote origin refs/heads/main` | 首次推送前确认d6665ee，文档推送前确认d6c71d2；之后均为获授权普通推送，见第16节 |
 | `npm run check:public-index`、`check-publication.mjs` | 实际175文件索引通过，清单及70个相对链接一致；没有加入exe、SQLite或验收profile |
 
 Windows既有文本保留CRLF；普通 `git diff --check` 将新增行的CR报为尾随空白，使用显式包含 `cr-at-eol` 的临时whitespace配置后检查通过，没有更改历史原件或全局Git配置。
@@ -130,13 +130,13 @@ Windows既有文本保留CRLF；普通 `git diff --check` 将新增行的CR报�
 
 ## 12. 真实GitHub端到端结果
 
-**尚未验证。** 当前只完成用户记事本→真实翻译→本地CaptureEvent，以及Windows/协议/HTTP模拟和本机Web接收。没有新PAT，未上传真实captures批次；正式站仍是Phase3.5版本，新增接收尚未公开推送。不能称「桌面→私库→正式站→词库→重复读取」全链路通过。
+**用户暂缓，尚未验证。** 当前完成用户记事本→真实翻译→本地CaptureEvent，以及Windows/协议/HTTP模拟、本机Web接收和正式站接收入口部署。指定验收窗口未建立有效会话，未上传真实captures批次。不能称「桌面→私库→正式站→词库→重复读取」全链路通过。
 
-待首次公开报告确认后普通push main、检查Actions/Pages，再由用户在桌面及正式站本人输入新的仅授权`Polar0216/polar-vocab-data-test`受限PAT。保留旧state及学习记录，以人工example/新增人工标记批次验收首次接收、再次读取、编辑保留和原FSRS集合不变。不得清空私库或换用其他私库。
+未来仅在用户主动恢复验收时继续：使用本人在应用内输入的已有有效受限PAT，目标仍仅`Polar0216/polar-vocab-data-test / main`；先保存远端当前完整备份和基线，再以已保留的人工example/德语标记事件检查首次接收、再次读取、编辑保留和原FSRS集合不变。无需每次新建或撤销凭证，不重复添加旧人工事件，不清空私库或换用其他私库。此次不再请求该项操作。
 
 ## 13. 尚未完成与保留资料
 
-待：首次公开授权/推送、远端Linux Actions、新正式站接收部署及真实私库端到端；Word/PDF/VS Code/浏览器划词、复杂剪贴板、快速触发、多显示器/Win10实测。用户已暂停iPhone，不再要求测试，原Phase3.5真实401、iPhone同步及正常跨版本SW更新仍保留未验证。
+已完成首次公开授权/普通推送、远端Linux Actions、正式站接收入口部署和公开页面检查。待：用户暂缓的真实私库采集端到端；Word/PDF/VS Code/浏览器划词、复杂剪贴板、快速触发、多显示器/Win10实测。用户已暂停iPhone，不再要求测试，原Phase3.5真实401、iPhone同步及正常跨版本SW更新仍保留未验证。
 
 现有测试词条、卡片、事件、墓碑、决议、备份与复现材料保留。40份已有阶段报告/本机恢复证据/控制脚本的SHA256检查无变化；这不是对未哈希浏览器缓存或远端状态的全量证明。此次未对私库请求，更没有删除/重建/覆盖历史。当前不提出执行清理，只给将来用户确认的候选：自动输出、失败工具下载/旧锁副本、重复本机构建、孤立测试profile；历史故障证据与私库不属于默认删除项。
 
@@ -144,11 +144,11 @@ Windows既有文本保留CRLF；普通 `git diff --check` 将新增行的CR报�
 
 Electron体积约100MB且未签名；Node SQLite仍experimental；免费翻译记忆可能误译/额度耗尽且会处理查询；UIA及Ctrl+C受应用权限、焦点与剪贴板管理器限制。树扫描及单快照有预算，规模增长需另行版本化设计；不通过删事件规避。关闭窗口留托盘是明确生命周期，退出才结束后台；程序移除不删除AppData。
 
-Pages新版本与Windows10、SmartScreen、低性能机器、外部软件兼容性尚无完整实测；当前客户端仍为手动授权，重开不能自动上传。云端不可变文件只创建、从不清理，长期体积增长需要后续方案。
+正式站基础16项检查已通过，旧PWA正常跨版本更新仍未验证；Windows10、SmartScreen、低性能机器及外部软件兼容性尚无完整实测。当前客户端仍为手动授权，重开不能自动上传。云端不可变文件只创建、从不清理，长期体积增长需要后续方案。
 
 ## 15. 后续建议与停止边界
 
-先完成本阶段发布确认及真实采集链路，修复任何新发现问题，再补Windows兼容矩阵。Phase5可另行授权后设计iOS快捷指令/Numbers收词与更高级词典Provider；不在此轮自动开始，不要求恢复iPhone测试，不清理任何现有环境。
+本轮停在Phase4，尊重用户暂缓私库实测的决定。用户以后主动恢复时，先补真实采集链路及Windows兼容矩阵。Phase5可另行授权后设计iOS快捷指令/Numbers收词与更高级词典Provider；不在此轮自动开始，不要求恢复iPhone测试，不清理任何现有数据或故障证据。
 
 详细使用见 [WINDOWS_CAPTURE](../../docs/WINDOWS_CAPTURE.md)，协议见 [CAPTURE_PROTOCOL](../../docs/CAPTURE_PROTOCOL.md)，故障见 [DESKTOP_TROUBLESHOOTING](../../docs/DESKTOP_TROUBLESHOOTING.md)。
 
@@ -164,4 +164,8 @@ Pages新版本与Windows10、SmartScreen、低性能机器、外部软件兼容�
 
 运行 `node .cache/phase4-publication/production-check.mjs` 对[正式网站](https://polar0216.github.io/polar-vocab/)进行隔离Edge检查，16项通过：HTTPS入口200、五页导航与刷新、新桌面接收入口及未授权保护、manifest路径、Service Worker URL/作用域、离线应用外壳与复习页刷新、320px五页无横向溢出、无页面异常。作用域为 `https://polar0216.github.io/polar-vocab/`。检查使用新profile且无私库凭证，不代表iPhone、旧PWA跨版本更新或私库同步通过；JSON及320px截图保留在 `.cache/phase4-publication/formal-check-oIfRdc/`。
 
-真实采集验收窗口使用最终便携exe及独立正式站profile，自动上传关闭。原记事本example事件完整保留，并增加一个带唯一标记的人工德语事件用于接收/编辑/重复读取；当前本机两条待上传，启动前已在线备份SQLite。私库目标固定为 `Polar0216/polar-vocab-data-test / main`，尚未完成两端预检、连接前备份和真实上传。用户选择沿用已有有效受限PAT，无需新建或撤销；新的应用会话不保存旧凭证，需用户本人在两端设置内重新输入。不得把待执行步骤记作通过，既有词库与学习历史不得清空。
+文档提交40036c4正常推送后，[Actions 39114215009](https://github.com/Polar0216/polar-vocab/actions/runs/39114215009) 实际显示Success，总计3分21秒，build3分2秒、deploy12秒。远端作业摘要实际显示18文件237项Web单元测试、2文件15项Desktop单元测试通过；其他必需步骤由整个build成功确认，不额外虚构逐项计数。当前ubuntu-latest提供的环境已通过；作业提示未来迁移Ubuntu26，迁移后的环境尚未验证。
+
+真实采集验收窗口使用最终便携exe及独立正式站profile，自动上传关闭。原记事本example事件完整保留，并增加一个带唯一标记的人工德语事件用于接收/编辑/重复读取；本机两条仍待上传，启动前已在线备份SQLite。私库目标固定为 `Polar0216/polar-vocab-data-test / main`。用户回复预检就绪后，受控页面实际均未连接、无弹窗、只读按钮不可用；核对窗口后，用户明确选择「先跳过私库实测」。因此未执行连接确认、远端基线下载、captures上传或接收，不把计划、脚本语法检查或用户就绪回复当作通过。
+
+暂缓前再次保存独立Web完整JSON备份及桌面SQLite在线备份，保留原队列、profile、批次计划及旧故障证据；仅正常关闭本轮创建的验收窗口，未删文件、未撤销凭证、未清空数据。既有私库词库与学习历史没有被本轮采集测试改写。后续如恢复应继续这两条原事件，先重新核验当前远端基线，不重复造词。
