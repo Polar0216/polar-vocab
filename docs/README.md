@@ -11,6 +11,9 @@
 | [DEVELOPMENT.md](DEVELOPMENT.md) | 开发、依赖、测试、构建和部署方法 |
 | [GITHUB_SETUP.md](GITHUB_SETUP.md) | 普通用户私有仓库与最小权限 PAT 设置 |
 | [SYNC_TROUBLESHOOTING.md](SYNC_TROUBLESHOOTING.md) | 授权、冲突、离线与恢复排查 |
+| [WINDOWS_CAPTURE.md](WINDOWS_CAPTURE.md) | Windows安装、划词、离线队列与采集同步 |
+| [CAPTURE_PROTOCOL.md](CAPTURE_PROTOCOL.md) | 共享不可变批次、UUID与Web回执 |
+| [DESKTOP_TROUBLESHOOTING.md](DESKTOP_TROUBLESHOOTING.md) | 桌面快捷键、剪贴板、翻译与队列故障 |
 | [REAL_DEVICE_CHECKLIST.md](REAL_DEVICE_CHECKLIST.md) | Phase 3.5 正式站点、多端与 iPhone 逐项验收 |
 | [reference/](reference/README.md) | 用户提供的原始规划资料 |
 

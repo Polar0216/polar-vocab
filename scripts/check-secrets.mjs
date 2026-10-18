@@ -2,7 +2,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 // A deterministic public-tree guard, not a substitute for reviewing unknown private data.
-const skip = new Set(['.git', 'node_modules', 'coverage', 'test-results', 'playwright-report'])
+const skip = new Set(['.git', '.cache', 'artifacts', 'node_modules', 'coverage', 'test-results', 'playwright-report'])
 const textExtensions = /\.(?:[cm]?[jt]sx?|json|md|html|css|ya?ml|toml|env|txt|csv)$/
 const tokenPatterns = [/github_pat_[A-Za-z0-9_]{20,}/, /gh[pousr]_[A-Za-z0-9]{20,}/, /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/]
 const violations = []

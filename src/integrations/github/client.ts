@@ -10,7 +10,7 @@ export class ApiError extends Error {
   constructor(code: ApiCode, retryAt = 0, uncertain = false) { super(messages[code]); this.name = 'ApiError'; this.code = code; this.retryAt = retryAt; this.uncertain = uncertain }
 }
 export interface RemoteFile { text: string; sha: string; etag?: string }
-export interface GitHubTransport { verify(input: Omit<Target, 'branch'> & { branch: string }): Promise<Target>; get(target: Target): Promise<RemoteFile | null>; put(target: Target, text: string, sha: string | null): Promise<RemoteFile>; clear(): void }
+export interface GitHubTransport { verify(input: Omit<Target, 'branch'> & { branch: string }): Promise<Target>; get(target: Target): Promise<RemoteFile | null>; put(target: Target, text: string, sha: string | null): Promise<RemoteFile>; clear(): void; captures?(target: Target): Promise<import('./captures').CaptureRepository> }
 const shaSchema = z.string().regex(/^[0-9a-f]{40}$/i)
 export const MAX_REMOTE_BYTES = 900_000
 export const WARN_REMOTE_BYTES = 720_000
@@ -112,5 +112,13 @@ export class GitHubClient implements GitHubTransport {
     const response = await this.request(`${this.repo(target)}/contents/${target.path}`, 'PUT', { branch: target.branch, message: 'Polar Vocab: synchronize snapshot', content: toBase64(text), ...(sha ? { sha } : {}) })
     const raw = await this.json(response)
     try { const file = { text, sha: shaSchema.parse(z.record(z.string(), z.unknown()).parse(raw.content).sha) }; this.cache.delete(this.key(target)); return file } catch { throw new ApiError('invalid-data', 0, true) }
+  }
+  async captures(target: Target): Promise<import('./captures').CaptureRepository> {
+    targetSchema.parse(target)
+    const { CaptureRepository } = await import('./captures')
+    return new CaptureRepository(target, {
+      verify: () => this.verify(target),
+      request: (path, method, body) => this.request(path, method, body),
+    })
   }
 }

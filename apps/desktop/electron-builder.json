@@ -1,0 +1,13 @@
+{
+  "appId": "com.polarvocab.capture",
+  "productName": "Polar Vocab Capture",
+  "electronVersion": "44.9.0",
+  "directories": { "output": "../../artifacts/desktop" },
+  "files": ["build/main.cjs", "build/preload.cjs", "build/renderer/**", "build/icon.png", "build/THIRD_PARTY_NOTICES.txt", "package.json"],
+  "extraResources": [{ "from": "build/native/SelectionHelper.exe", "to": "SelectionHelper.exe" }],
+  "asar": true,
+  "npmRebuild": false,
+  "win": { "target": [{ "target": "portable", "arch": ["x64"] }], "icon": "build/icon.png", "signExecutable": false, "requestedExecutionLevel": "asInvoker" },
+  "portable": { "artifactName": "Polar-Vocab-Capture-${version}-win-x64.exe" },
+  "publish": null
+}

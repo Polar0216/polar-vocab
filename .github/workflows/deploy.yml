@@ -19,6 +19,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
+      # Pages checks do not run Electron; keep its types but skip the desktop binary.
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
       # Set repository variable to / for a user site / custom domain.
       PAGES_BASE_PATH: ${{ vars.PAGES_BASE_PATH || format('/{0}/', github.event.repository.name) }}
     steps:
@@ -33,6 +35,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+      - run: npm run test:desktop
       - run: npm run build:pages
       - run: node scripts/check-dist.mjs "$PAGES_BASE_PATH"
       - run: npm run check:secrets

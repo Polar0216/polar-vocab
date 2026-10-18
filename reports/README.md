@@ -9,19 +9,20 @@
 | [phase-2/PHASE2_REPORT.md](phase-2/PHASE2_REPORT.md) | Phase 2 FSRS、卡片、学习任务与数据一致性验收 | 是 |
 | [phase-3/PHASE3_REPORT.md](phase-3/PHASE3_REPORT.md) | Phase 3 私有同步、多端模拟与安全验收 | 是 |
 | [phase-3.5/PHASE3_5_REPORT.md](phase-3.5/PHASE3_5_REPORT.md) | Phase 3.5 首次推送、正式站与逐项真实验收状态 | 是 |
-| `test-results/e2e/` | 可被测试运行清理的trace、截图及执行产物；不放真实验收备份或控制脚本 | 否，自动生成 |
+| [phase-4/PHASE4_REPORT.md](phase-4/PHASE4_REPORT.md) | Phase 4 Windows收词、共享批次、Web接收与未验证项 | 是 |
+| `test-results/phase-4/` | 本阶段可重建的trace、截图及执行产物；不放真实验收备份或控制脚本 | 否，自动生成 |
 | `playwright-report/` | 可查看的HTML浏览器测试报告 | 否，自动生成 |
 | 工程根目录 `.cache/phase3.5-real-sync/` | 实时验收恢复后重新导出的本机备份，位于E2E输出清理范围之外 | 否，仅留本机，不发布 |
 
-从项目根目录运行 `npm run test:e2e` 会更新 `test-results/e2e/` 和 `playwright-report/`，不会生成或替代真实验收备份。查看报告：
+从项目根目录运行 `npm run test:e2e` 会更新 `test-results/phase-4/web-e2e/` 和 `playwright-report/phase-4/web/`；桌面测试使用独立desktop子目录，不生成或替代真实验收备份。查看默认Web报告：
 
 ```sh
-npx playwright show-report reports/playwright-report
+npx playwright show-report reports/playwright-report/phase-4/web
 ```
 
 自动报告只证明这次测试所覆盖的行为，不能替代真机、远程部署或未实现功能的验收。源码、依赖和构建产物仍使用标准工程目录；启动方法见 [README](../README.md)。
 
-Phase3.5修复982b023普通push/[Actions](https://github.com/Polar0216/polar-vocab/actions/runs/38702050828)成功，元数据由API独立核对，原始日志未读。正式站A–G通过；H的幂等、进程恢复、收词/评分精确ACK、同profile标签锁、离线刷新及替代凭证重授权/最终收敛均通过，最终A/B各14词/3卡/5评分、共享表/SHA一致、pending/冲突/活动任务均0。真实401按用户选择保留未验证，H因此部分通过。iPhone1–3、6、8–10用户反馈通过，第4部分，第5/7/14未测，11–13真机同步由用户暂缓。本轮可执行部分结案，整体尚未完整验收，不进入Phase4。
+Phase3.5修复982b023普通push/[Actions](https://github.com/Polar0216/polar-vocab/actions/runs/38702050828)成功，元数据由API独立核对，原始日志未读。正式站A–G通过；H的幂等、进程恢复、收词/评分精确ACK、同profile标签锁、离线刷新及替代凭证重授权/最终收敛均通过，最终A/B各14词/3卡/5评分、共享表/SHA一致、pending/冲突/活动任务均0。真实401按用户选择保留未验证，H因此部分通过。iPhone1–3、6、8–10用户反馈通过，第4部分，第5/7/14未测，11–13真机同步由用户暂缓。本轮可执行部分结案，整体尚未完整验收，该轮未授权Phase4；现有另行授权允许Phase4，未测项仍保留。
 
 首次完整E2E重跑因旧输出目录误清理临时验收脚本、早期备份与acceptance JSONL而中止（退出1，未通过）。两端仍打开的数据已重新导出至上述 `.cache/` 位置，未损坏受跟踪原件或私库，未暴露PAT；不能声称旧临时原始产物仍完整保留。已观察工具结果仍如实记入 [Phase3.5报告](phase-3.5/PHASE3_5_REPORT.md)，逐项状态见[清单](../docs/REAL_DEVICE_CHECKLIST.md)。凭证、profile及恢复备份不纳入公开提交。
 

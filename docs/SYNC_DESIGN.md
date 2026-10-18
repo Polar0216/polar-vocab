@@ -1,6 +1,6 @@
-# GitHub 私有同步协议（Phase 3）
+# GitHub 私有同步协议（Phase 3 / Phase 4 采集扩展）
 
-状态：网络适配器、内存授权、版本化快照、三方合并、持久化批次、冲突决议已实现并完成模拟验收。**真实专用私有仓库尚未验收**，不得据此宣称所有真实设备云端同步通过。原始规划保持不变。
+主协议的网络适配器、内存授权、版本化快照、三方合并、持久化批次和冲突决议已经实现。Phase 3.5 已记录主要桌面双端真实验收；真实401、iPhone同步及正常跨版本更新仍未验证。Phase 4 新增采集扩展，尚未完成正式站端到端验收，不得据此宣称所有设备通过。原始规划保持不变。
 
 ## 1. 双仓库与文件
 
@@ -80,4 +80,4 @@ LocalBackup v2 保存 snapshot、metadata/bases/pending/conflicts/preferences，
 
 未来分片需协议升级、不可变内容寻址分片和一个 Git tree/commit 原子指针切换，并验证跨文件引用、迁移回滚和旧客户端拒写。本阶段只单文件，未实现分片、压缩或归档。
 
-Windows 后续只上传按设备/月 CaptureEvent 队列，不修改 FSRS。共享 payload、UUIDv5 和回执接口已准备，本阶段未扫描 captures/、未开发桌面程序或 iOS 原生快捷指令。当前网页 CSV/剪贴板已共用协议。真实远端验收按 [GITHUB_SETUP](GITHUB_SETUP.md)，故障按 [SYNC_TROUBLESHOOTING](SYNC_TROUBLESHOOTING.md)。
+Phase 4 Windows 只上传按设备/月不可变 CaptureEvent 批次，不修改 FSRS。新增 captures 树扫描、不可变文件适配和 Web 预览接收，复用既有 payload、UUIDv5、回执及 pending。主快照协议与三方合并未改版，正式词库仍由原引擎上传。没有 iOS 原生快捷指令。详见 [CAPTURE_PROTOCOL](CAPTURE_PROTOCOL.md)，真实远端验收按 [GITHUB_SETUP](GITHUB_SETUP.md)，故障按 [SYNC_TROUBLESHOOTING](SYNC_TROUBLESHOOTING.md)。

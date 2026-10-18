@@ -3,11 +3,11 @@ import { defineConfig, devices } from '@playwright/test'
 const base = process.env.PAGES_BASE_PATH ?? '/polar-vocab/'
 export default defineConfig({
   testDir: './tests/e2e',
-  outputDir: './reports/test-results/e2e',
+  outputDir: './reports/test-results/phase-4/web-e2e',
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 1 : 0,
-  reporter: [['list'], ['html', { outputFolder: './reports/playwright-report', open: 'never' }]],
+  reporter: [['list'], ['html', { outputFolder: './reports/playwright-report/phase-4/web', open: 'never' }]],
   use: {
     baseURL: `http://127.0.0.1:4173${base}`,
     channel: process.env.PLAYWRIGHT_CHANNEL,

@@ -22,7 +22,7 @@ async function connect(page: Page) {
   const download = page.waitForEvent('download'); await dialog.getByRole('button', { name: '下载连接前完整备份' }).click(); await download
   await dialog.getByRole('checkbox').check(); await dialog.getByRole('button', { name: '确认连接并同步', exact: true }).click(); await expect(dialog).not.toBeVisible(); await expect(page.locator('.sync-status')).toContainText('已同步')
 }
-test('connect, offline pending, foreground recovery, fresh authorization and secret-free backup/cache', async ({ page, context }) => {
+test('connect, offline pending, foreground recovery, fresh authorization and secret-free backup/cache', async ({ page, context }, testInfo) => {
   const fake = new FakeGitHub(); await mock(context, fake); await add(page, '<img src=x onerror=alert(1)>'); await connect(page)
   expect(fake.text).not.toContain('artificial-session-value'); expect(fake.requests.every((r) => !r.url.includes('artificial-session-value'))).toBe(true)
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true); await context.setOffline(true); await add(page, 'offline-fixture'); await page.goto('./#/settings'); await expect(page.locator('.sync-status')).toContainText('当前离线'); await expect(page.getByRole('button', { name: '立即同步', exact: true })).toBeDisabled(); await context.setOffline(false)
@@ -31,7 +31,7 @@ test('connect, offline pending, foreground recovery, fresh authorization and sec
   const cached = await page.evaluate(async () => { const urls = []; for (const key of await caches.keys()) for (const req of await (await caches.open(key)).keys()) urls.push(req.url); return urls }); expect(cached.every((url) => !url.includes('api.github.com'))).toBe(true)
   await page.reload(); await expect(page.locator('.sync-status')).toContainText('需要重新授权'); await expect(page.getByLabel('Fine-grained PAT', { exact: true })).toHaveValue(''); await connect(page)
   await page.setViewportSize({ width: 320, height: 700 }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-  await page.screenshot({ path: 'reports/test-results/sync-320.png', fullPage: true }); await page.getByRole('button', { name: '断开连接，保留本机数据', exact: true }).click(); await expect(page.locator('.sync-status')).toContainText('未连接'); expect(JSON.parse(fake.text!).snapshot.vocabularies).toHaveLength(2)
+  await page.screenshot({ path: testInfo.outputPath('sync-320.png'), fullPage: true }); await page.getByRole('button', { name: '断开连接，保留本机数据', exact: true }).click(); await expect(page.locator('.sync-status')).toContainText('未连接'); expect(JSON.parse(fake.text!).snapshot.vocabularies).toHaveLength(2)
 })
 test('remote field conflict preview and explicit decision preserve both audit copies', async ({ page, context }) => {
   const fake = new FakeGitHub(); await mock(context, fake); await add(page, 'conflict-fixture'); await connect(page)

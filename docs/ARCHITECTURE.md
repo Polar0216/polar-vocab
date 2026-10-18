@@ -1,6 +1,6 @@
-# 系统架构与模块职责（Phase 3）
+# 系统架构与模块职责（Phase 4）
 
-基于原有本地词库与真实 FSRS，新增独立 GitHub 同步能力。模拟 API、双设备和浏览器验证见阶段报告，真实私有仓库、iPhone 和远程部署仍未验收。原始 [PROJECT_PLAN](PROJECT_PLAN.md) 及 reference 原件保留。
+基于原有本地词库、FSRS 和 Phase 3 私库同步，Phase 4 新增独立 Windows 收词器。Phase 3.5 已有部署与主要桌面双端验收，iPhone同步、真实401及正常跨版本更新仍未验证。用户另行授权 Phase 4；当前验收状态以 [Phase 4 报告](../reports/phase-4/PHASE4_REPORT.md) 为准。原始 [PROJECT_PLAN](PROJECT_PLAN.md) 及 reference 原件保留。
 
 ## 数据流
 
@@ -76,4 +76,31 @@ GitHub ETag 只减少无变化下载，PUT 仍使用本轮 GET 的 blob SHA。�
 
 Workbox 仅预缓存静态构建分块，不缓存 GitHub API 或词库；base、manifest 和 SW 作用域统一 `/polar-vocab/`，Hash 路由刷新兼容 Pages。prompt 更新不强制打断编辑。PWA 首次缓存需联网，真实安装/线上升级仍待验收。
 
-没有自建服务器、Serverless、云数据库、Windows 客户端、iOS 原生快捷指令或词典/AI 集成。本阶段仅 Phase 3。
+没有自建服务器、Serverless 或云数据库，也没有 iOS 原生快捷指令。Windows 收词与免费翻译见下节，FSRS 算法保持原实现。
+
+## Phase 4 桌面与 Web 接收边界
+
+```mermaid
+flowchart LR
+ Selection[用户快捷键] --> Helper[按需 UIA / 受保护复制回退]
+ Helper --> Window[本地 React 窗口]
+ Window --> Provider[MyMemory 仅查询原文]
+ Window --> Queue[(SQLite 事件 / 冻结批次)]
+ Queue --> CaptureAPI[共享 CaptureRepository]
+ CaptureAPI --> Batches[(私库 captures/)]
+ Batches --> Receive[Web 扫描 / 预览 / 确认]
+ Receive --> Existing[既有 service.ingest]
+ Existing --> DB[(IndexedDB 回执 / pending)]
+ DB --> OriginalSync[原 Phase 3 同步]
+ OriginalSync --> State[(data/state.json)]
+```
+
+`packages/shared/` 重导出既有 CaptureEvent、VocabularyPayload、schema、canonicalJson 和固定 UUIDv5，并定义采集批次 envelope；没有第二套领域模型，不依赖 Electron。
+
+`apps/desktop/src/main.ts` 管理本机协议、托盘、单实例、快捷键、IPC 和退出；`preload.ts` 只暴露具名操作。渲染器启用 sandbox/contextIsolation，关闭 Node，只加载本机 `polar://capture/` 资产，CSP 禁止联网与远程脚本。`native/SelectionHelper.cs` 按需运行，无常驻输入/剪贴板监听，不读取密码字段，选词不作为 shell 参数。
+
+`queue.ts` 是 SQLite outbox，不含卡片、ReviewEvent 或 FSRS；事务保证本地保存及冻结批次精确 ACK。`uploader.ts` 使用现有 GitHubClient 的私有目标检查、内存凭证与固定错误分类，只调用 captures 能力，不调用主快照写入。
+
+`src/integrations/github/captures.ts` 负责完整树扫描预算、创建时不带 sha 的不可变上传、同内容重试及冲突拒绝。Web `CaptureInboxPanel` 绑定连接代次，确认后调用唯一词库服务。原事件、回执、词条及 pending 在既有事务中提交；相似词只提示，不替换人工释义。详见 [CAPTURE_PROTOCOL](CAPTURE_PROTOCOL.md)。
+
+Electron/builder 是根开发依赖。Web 与 Desktop 分别构建；Pages 不下载 Electron 二进制、不运行原生打包。Windows 输出到 `artifacts/desktop/`，自动输出与真实验收配置分开，回归不清理 Phase 3.5 资料。

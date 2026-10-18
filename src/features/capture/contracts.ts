@@ -1,13 +1,6 @@
 import type { CaptureEvent, UUID } from '../../domain';
 
-/** Windows owns a device/month file; retry preserves event IDs and immutable payloads. */
-export interface CaptureBatch {
-  readonly id: UUID;
-  readonly schemaVersion: CaptureEvent['schemaVersion'];
-  readonly deviceId: UUID;
-  readonly month: string;
-  readonly events: readonly CaptureEvent[];
-}
+export type { CaptureBatch } from '../../../packages/shared/capture-batch';
 
 export type CaptureIngestionResult =
   | { readonly status: 'saved'; readonly vocabularyIds: readonly UUID[]; readonly skippedCaptureIds: readonly UUID[] }

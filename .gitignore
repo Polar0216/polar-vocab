@@ -1,5 +1,7 @@
 node_modules/
 dist/
+apps/desktop/build/
+artifacts/
 coverage/
 reports/test-results/
 reports/playwright-report/

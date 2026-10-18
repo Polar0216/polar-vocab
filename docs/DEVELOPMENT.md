@@ -1,6 +1,47 @@
-# 开发、测试与部署（Phase 3.5 真实验收）
+# 开发、测试与部署（Phase 4）
 
-工程基线 Node 24 LTS / npm 11，实际 Node 24.13.0、npm 11.6.2。使用 npm ci 按精确 package-lock.json 安装，.npmrc 开启 exact 与 engine-strict。Phase 3 未新增/升级依赖。
+工程基线 Node 24 LTS / npm 11，实际 Node 24.13.0、npm 11.6.2。使用 npm ci 按精确 package-lock.json 安装，.npmrc 开启 exact 与 engine-strict。Web生产依赖不变，Phase4新增桌面开发依赖；后面的Phase3.5结果是历史记录，当前状态见Phase4报告。
+
+## Phase 4 桌面工程
+
+根目录统一锁文件，`apps/desktop/package.json` 只定义应用元信息与生产入口，不建立第二份锁文件。
+
+| 新增/覆盖依赖 | 精确版本 | 许可 | 用途 |
+| --- | --- | --- | --- |
+| electron | 44.9.0 | MIT及随附Chromium通知 | React窗口、托盘、快捷键、网络 |
+| electron-builder | 26.15.3 | MIT | Windows x64便携打包 |
+| esbuild | 0.28.2 | MIT | 主进程及preload打包 |
+| @electron/get override | 5.1.0 | MIT | 统一下载库，移除旧漏洞依赖链 |
+
+曾尝试审计建议的builder26.5.0，但其旧tar依赖带来高/严重漏洞，未采用。最终最新builder加全局get5.1覆盖已完成实际打包；未来更新仍需复查。内建 `node:sqlite` 在当前Node24仍提示experimental，版本锁定并有事务/重启测试，不保证升级自动兼容。
+
+```sh
+npm run desktop:runtime
+npm run desktop:build
+npm run desktop:dev
+npm run test:desktop
+npm run test:desktop:e2e
+npm run desktop:package
+```
+
+`desktop:runtime` 显式运行Electron下载脚本，保留官方校验。当前Electron npm包的普通安装不保证二进制存在。Pages只需类型，工作流设置 `ELECTRON_SKIP_BINARY_DOWNLOAD=1`，不构建桌面或加入原生文件。
+
+Windows构建需 `%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe`、UIAutomationClient/Types及WindowsBase。不安装Rust/MSVC或全局键盘工具。构建输出未签名，不购买证书，不自动发布Release。捆绑依赖许可证保留在应用内 `build/THIRD_PARTY_NOTICES.txt`，Electron/Chromium通知随运行时分发；源码自身暂UNLICENSED。
+
+普通桌面E2E默认跳过外部供应商请求。真实翻译验收显式设置PowerShell `$env:PHASE4_LIVE_TRANSLATION='1'` 后再运行，消耗免费匿名额度；结果使用独立文件名保存到 `.cache/phase4-real-desktop/e2e/provider-results-*.json`。英语/德语候选需人工核对，不能仅凭HTTP成功证明语义正确。
+
+| 路径 | 管理方式 |
+| --- | --- |
+| `apps/desktop/build/` | 构建中间文件，忽略Git |
+| `artifacts/desktop/` | 便携exe及win-unpacked，忽略Git |
+| `reports/test-results/phase-4/` | Web/桌面自动输出，按任务子目录重建 |
+| `reports/playwright-report/phase-4/web`、`desktop` | 自动HTML报告 |
+| `.cache/phase4-real-desktop/`、`.cache/phase4-real-windows/` | 人工验收证据及隔离配置，不放进E2E清理目录 |
+| `.cache/phase4-preservation/` | 历史资料哈希与依赖检查证据 |
+
+现有Phase3.5资料不迁移、不清空。测试只写全新合成数据库；验收用专用 `POLAR_VOCAB_CAPTURE_DATA_DIR` 覆盖默认AppData，不操作日常队列。导出不覆盖已有备份。桌面E2E/打包只在Windows本机执行；Linux Pages增加共享/SQLite单元测试，不冒充Windows实测。
+
+首次公开Phase4前审查实际索引/清单、秘密模式、SQLite/profile/产物忽略、历史报告clean-only filter、npm audit、Pages及桌面产物。向用户报告后再普通push，不force；不把exe作为源码Gitblob，不自动创建GitHub Release。锁文件dry-run出现Tailwind可选WASM捆绑peer告警，当前原生Windows构建通过；Linux CI仍待远程执行。
 
 ## 依赖与许可证
 
@@ -111,7 +152,7 @@ CSP 在生产 HTML 注入：script/self、connect/self + api.github.com、object
 
 旧profile因先前清理后存储访问失败而AbortError，实际失败不当正常SW更新通过。保留旧目录、关闭/中断旧会话，新 `.cache/phase3.5-real-sync/fixed-profile-A/`、`fixed-profile-B/` 经空库备份及正常UI恢复原JSON，原事件ID/审计保留、新本机身份不同；撤销连接/SHA后用户自行预检/确认同一私库，原F/G已通过。后来H控制工具中断也保留原批次与后写操作，真实进程重启恢复已验证；无需清库/重建远端或提取/注入凭证。
 
-iPhone真机仅用独立人工数据。用户反馈iOS26.6的第1–3、6、8通过，另对明确询问的离线Good评分及关闭重开反馈通过，因此第9、10项也记用户报告通过。第4项剪贴板导入正常但单次计数未知，第5项拒绝回退、第7项德语结构字段、第14项跨版本更新尚未验证；用户明确暂缓第11–13项真机同步，继续保留未验证，本轮不再催促。公开Actions元数据已独立核对，原始日志未读；桌面旧profile更新失败不替代正常SW升级。本轮可执行部分结案，整体尚未完整验收，不进入Phase4。
+iPhone真机仅用独立人工数据。用户反馈iOS26.6的第1–3、6、8通过，另对明确询问的离线Good评分及关闭重开反馈通过，因此第9、10项也记用户报告通过。第4项剪贴板导入正常但单次计数未知，第5项拒绝回退、第7项德语结构字段、第14项跨版本更新尚未验证；用户明确暂缓第11–13项真机同步，继续保留未验证，本轮不再催促。公开Actions元数据已独立核对，原始日志未读；桌面旧profile更新失败不替代正常SW升级。本轮可执行部分结案，整体尚未完整验收，该轮未授权Phase4；现有另行授权允许Phase4，未测项仍保留。
 
 收尾 `verify-local.mjs` 实际通过6原件哈希、39相对链接、141条清单、25份JSON产物、21份完整备份及19个匹配SHA的canonical远端基线检查，无识别PAT/凭证字段/远端local-only字段且均被忽略。已关闭控制器，并经沙箱外检查确认进程退出，Node REPL内存已reset；这不替代用户在GitHub撤销临时测试凭证。后续新增文件或文档提交需重新做相应公开检查。
 

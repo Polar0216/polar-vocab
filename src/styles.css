@@ -535,3 +535,10 @@ input[type=checkbox], input[type=radio] { accent-color: var(--accent); }
 .sync-settings summary { cursor: pointer; padding: .75rem 0; }
 .sync-diff { display: grid; gap: .75rem; }
 @media (min-width: 900px) { .sync-diff { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+.capture-inbox-panel { margin-block: 1.25rem; padding: 1.25rem; border: 1px solid var(--border, #ccd9d0); border-radius: 1rem; }
+.capture-inbox-panel summary { cursor: pointer; font-weight: 650; }
+.capture-batch-list { max-height: 15rem; overflow-y: auto; }
+.capture-preview-list { list-style: none; padding: 0; }
+.capture-preview-list li { padding: .9rem 0; border-bottom: 1px solid var(--border, #ccd9d0); overflow-wrap: anywhere; }
+.capture-preview-list p { margin: .45rem 0; }

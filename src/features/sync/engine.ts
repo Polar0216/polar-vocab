@@ -27,6 +27,13 @@ export class SyncEngine {
   lastError = ''
   constructor(service: LocalVocabularyService) { this.service = service }
   authorized(): boolean { return Boolean(this.transport) }
+  async captureRepository(): Promise<import('../../integrations/github/captures').CaptureRepository> {
+    const connection = await this.connection(), transport = this.transport
+    if (!connection || !transport?.captures) throw new SyncError('请先在设置中连接私有仓库；刷新后需要重新授权。')
+    if (!navigator.onLine) throw new SyncError('当前离线，请联网后检查桌面批次；本机词条保持不变。')
+    if (this.busy) throw new SyncError('主同步正在进行，请等待完成再读取采集批次。')
+    return transport.captures({ owner: connection.owner, repository: connection.repository, branch: connection.branch, path: connection.path })
+  }
   async connection(): Promise<Connection | undefined> { await this.service.initialize(); return this.service.db.connections.toCollection().first() }
   async test(input: Omit<Target, 'path'>, token: string, transport: GitHubTransport = new GitHubClient(token)): Promise<ConnectionPreview> {
     this.preview?.transport.clear(); this.preview = undefined

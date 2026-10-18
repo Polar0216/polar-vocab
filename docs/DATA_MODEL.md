@@ -1,4 +1,4 @@
-# 数据模型与交换协议（Phase 3）
+# 数据模型与交换协议（Phase 4）
 
 沿用 Phase 0 的六个模型与严格 Zod 校验，Phase 1 接入本地词库、导入和备份，Phase 2 接入真实 FSRS 调度、卡片事务和学习统计；Phase 3 接入 GitHub 合并。以下 1–10 节保留既有记录结构的说明，版本和新增字段以第 11 节为准。所有模型从 `src/domain/index.ts` 导出；schema 使用小驼峰名称，例如 `vocabularyEntrySchema`。本文件以代码为准，规划书中的 Lexeme/StudyCard 在正式协议中分别命名为 VocabularyEntry/Flashcard。
 
@@ -102,7 +102,7 @@ ReviewResolution 字段：`id`、`schemaVersion`、`conflictId`、`cardId`、`de
 
 字段：`id`（即规划书中的 captureId，UUID）、`schemaVersion`、`deviceId`、`capturedAt`、`origin`、`payload`。`payload` 使用 VocabularyPayload，与词条的语言、词形和可选内容字段完全一致，但不含词条生命周期字段；同一 payload 的原句 ID 必须唯一，与正式词条复用相同校验。本机文件及剪贴板导入已共用它，未来 Windows 本地队列继续复用；设备 ID 必须是 UUID，不能用电脑名称。
 
-CaptureEvent 按事件 ID 幂等摄取。`ingestedCaptureIds` 记录已成功转为词条的 ID；同时保留原始 CaptureEvent，以检查同一 ID 不同内容的异常。不得以词形或当前时间临时拼接捕获 ID；重试沿用同一个事件。Phase 1 已实现本机采集及摄取算法；Windows 客户端尚未实现。
+CaptureEvent 按事件 ID 幂等摄取。`ingestedCaptureIds` 记录已成功转为词条的 ID；同时保留原始 CaptureEvent，以检查同一 ID 不同内容的异常。不得以词形或当前时间临时拼接捕获 ID；重试沿用同一个事件。Phase 4 Windows 队列复用该模型，外层批次见第12节。
 
 ## 6. AppSettings 与 SyncMetadata
 
@@ -225,3 +225,11 @@ LocalBackup 现在导出 **backupVersion=2**，其 local 在原五集合之外�
 恢复完整保留共享历史、墓碑、冲突和字段决议审计，保留当前 deviceId，重置已确认 SHA/base/连接授权；旧任务仅在原备份保留供审计，不恢复活动上传。缺记录不是删除，重新连接要再次验证。换仓库不得沿用旧 base。备份预览绑定工作区指纹；恢复失败整体回滚。
 
 单快照 **720,000 UTF-8 字节预警 / 900,000 上限**，单文件不是无限容量数据库。上限不改变本地/20 MiB 完整备份的保存能力，不裁剪事件。未来规模迁移需新 protocolVersion、不可变分片及单次 Git tree commit 原子索引切换，当前只设计。
+
+## 12. Phase 4 采集包装与桌面存储
+
+`packages/shared/` 直接重导出既有模型与 UUIDv5 实现，新增的 `CaptureBatch` 仅是 `format/protocolVersion/schemaVersion/id/deviceId/month/events` 严格包装；详细预算、路径和不可变语义见 [CAPTURE_PROTOCOL](CAPTURE_PROTOCOL.md)。不修改 `DataSnapshot`、主快照协议或FSRS字段，不需要Dexie升级。
+
+桌面 SQLite `user_version=1`，`metadata` 保存设备UUID、DesktopSettings及无Token的目标三元组；`captures` 保存不可变事件JSON、时间、状态、batch_id、固定错误码；`batches` 保存规范正文、原目标、状态、SHA及固定错误码。状态包装不会写进远端CaptureEvent。WAL、synchronous FULL、本地保存/冻结/精确ACK事务；上传中新增事件不加入旧批次。未来版本或损坏记录拒绝并保留原文件，不清空迁移。
+
+DesktopSettings 只含快捷键、默认语言、主题、复制回退、自动查词和自动上传开关；与 Web AppSettings 分开，不同步学习配额。默认自动上传关闭。不存在Token字段或「记住此设备」。队列导出是 `polar-vocab-desktop-queue / queueVersion=1`，用于保留采集/outbox证据，不是Web LocalBackup；当前不提供导出文件的自动恢复入口。

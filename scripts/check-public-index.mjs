@@ -20,7 +20,7 @@ for (const entry of entries) {
   cursor = end + 1 + size + 1
   const reject = (reason) => violations.push({ file: entry.path, reason })
   if (type !== 'blob' || entry.stage !== '0' || !['100644', '100755'].includes(entry.mode)) reject('non-regular or unmerged publication entry')
-  if (/(?:^|\/)(?:node_modules|dist|coverage|data|captures|backups|test-results|playwright-report|browser-profiles|\.auth|\.cache|\.codex|\.agents)(?:\/|$)/i.test(entry.path)) reject('private or generated directory')
+  if (/(?:^|\/)(?:node_modules|dist|artifacts|coverage|data|captures|backups|test-results|playwright-report|browser-profiles|\.auth|\.cache|\.codex|\.agents)(?:\/|$)/i.test(entry.path) || entry.path.startsWith('apps/desktop/build/')) reject('private or generated directory')
   if (/(?:^|\/)\.env(?:\..*)?$/.test(entry.path) && entry.path !== '.env.example') reject('local environment file')
   if (/\.(?:pem|key|p12|pfx|db|sqlite3?|log|tmp|bak)$/i.test(entry.path) || /(?:^|\/)(?:state|.*backup.*)\.json$/i.test(entry.path)) reject('credential, private snapshot or temporary file')
   if (size > 2 * 1024 * 1024) reject('unexpected large source file; review separately')

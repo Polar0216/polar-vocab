@@ -2,9 +2,27 @@
 
 个人英语、德语词汇收集与间隔复习系统，目标是 GitHub Pages 静态 PWA + IndexedDB 本地优先 + 独立 GitHub 私有数据仓库。无需自建服务器、Serverless 或云数据库。
 
-**当前实现Phase3私库同步；修复982b023已普通推送/部署，A–G正式站真实通过。H的幂等、收词/评分精确ACK、进程恢复、跨标签锁、离线刷新与替代凭证重授权收敛均已通过；真实401按用户选择未验证，iPhone11–13真机同步由用户暂缓，其他未测项仍保留。Phase3.5本轮可执行部分结案，整体尚未完整验收，不进入Phase4。** 支持英德词汇收集、整理、文件/剪贴板导入、备份及四级FSRS自评；数据、设置和待同步操作在IndexedDB，首次缓存后可离线使用。
+**当前开发 Phase 4 Windows 收词器。** 本地源码包含快捷键选词、英德翻译、SQLite 队列、不可变采集上传和 Web 接收。Phase 4 尚未公开推送或部署，正式站仍为此前版本；逐项验收及未验证项目见 [Phase 4 报告](reports/phase-4/PHASE4_REPORT.md)。Phase 3.5 的真实401、iPhone同步及正常跨版本更新仍未验证；用户另行授权 Phase 4，不继续要求 iPhone 验收。原有测试环境与历史资料保留。
 
-FSRS 使用锁定的 ts-fsrs 5.4.2，卡片、评分事件和待同步操作原子保存。GitHub Contents API、内存 PAT、三方合并、持久化批次与冲突决议已经接入。Windows 客户端和 iOS 快捷指令仍未实现。
+FSRS 使用锁定的 ts-fsrs 5.4.2，卡片、评分事件和待同步操作原子保存。GitHub Contents API、内存 PAT、三方合并、持久化批次与冲突决议已经接入。Windows 仅上传采集，不写主快照或复习状态；iOS 原生快捷指令未实现。
+
+## Windows 收词器
+
+Windows 10/11 x64，构建需系统 .NET Framework 4.x C# 编译器及 UI Automation 程序集。
+
+```sh
+npm ci
+npm run desktop:dev
+npm run test:desktop
+npm run test:desktop:e2e
+npm run desktop:package
+```
+
+便携版：`artifacts/desktop/Polar-Vocab-Capture-0.4.0-win-x64.exe`，未签名，未购买证书。选中人工文本后按 Ctrl+Alt+S，核对 MyMemory 中文候选、可编辑释义与原句，再明确收藏。查询原文会交给供应商处理，可能保留；不要查询敏感内容。原剪贴板为图片/富文本且无法读取 UIA 时保持原状、回退手动输入，不能承诺全部软件兼容。
+
+收藏先保存 SQLite，离线可用。新 PAT 仅在设置中输入并在当前会话内存使用；不要发送到聊天。桌面只创建私库 `captures/` 批次，Web 生词箱预览并确认后由原同步引擎写正式词库。正式站须发布 Phase 4 Web 后才有接收入口。
+
+[Windows 使用说明](docs/WINDOWS_CAPTURE.md) · [采集协议](docs/CAPTURE_PROTOCOL.md) · [桌面故障排查](docs/DESKTOP_TROUBLESHOOTING.md)。源码在 `apps/desktop/`、共享边界在 `packages/shared/`、产物在 `artifacts/desktop/`；报告在 `reports/phase-4/`，自动测试输出在 `reports/test-results/phase-4/`，真实验收资料在忽略的 `.cache/phase4-real-*`，互不清理。
 
 ## 本地启动
 
@@ -92,7 +110,7 @@ JSON 备份包含真实 FSRS 状态及完整复习事件，恢复时核验实际
 
 远端是 `polar-vocab-state` 协议 1 / schema 1；本机备份是独立 LocalBackup v2，旧 v1 备份经显式包装迁移读取。Dexie v3 无清库升级。单快照上限 900,000 UTF-8 字节，720,000 起预警，绝不截断历史。
 
-[故障排查](docs/SYNC_TROUBLESHOOTING.md) · [Phase3报告](reports/phase-3/PHASE3_REPORT.md)。A–G真实通过；H的幂等、冻结上传期间收词/评分精确ACK、控制进程中断后的原批次恢复、同profile A2同步锁、离线刷新及替代凭证重授权均通过。最终A/B各14词/3卡/5评分，共享集合与SHA一致，原事件ID唯一保留，pending/冲突/活动任务均为0；真实401按用户选择保留未验证，因此H仍记部分通过。旧profile更新AbortError、E2E误清理及门闩工具Route already handled均留档；修正工具后重新执行验证，不将旧失败追记为通过。恢复保留原记录和审计，不当作正常SW更新通过。iPhone1–3、6、8–10用户反馈通过，第4部分，11–13由用户暂缓，其余待测。控制器已关闭并确认退出、内存已重置；不替代用户撤销临时凭证，不进入Phase4。
+[故障排查](docs/SYNC_TROUBLESHOOTING.md) · [Phase3报告](reports/phase-3/PHASE3_REPORT.md)。A–G真实通过；H的幂等、冻结上传期间收词/评分精确ACK、控制进程中断后的原批次恢复、同profile A2同步锁、离线刷新及替代凭证重授权均通过。最终A/B各14词/3卡/5评分，共享集合与SHA一致，原事件ID唯一保留，pending/冲突/活动任务均为0；真实401按用户选择保留未验证，因此H仍记部分通过。旧profile更新AbortError、E2E误清理及门闩工具Route already handled均留档；修正工具后重新执行验证，不将旧失败追记为通过。恢复保留原记录和审计，不当作正常SW更新通过。iPhone1–3、6、8–10用户反馈通过，第4部分，11–13由用户暂缓，其余待测。控制器已关闭并确认退出、内存已重置；不替代用户撤销临时凭证，该轮未授权Phase4；现有另行授权允许Phase4，未测项仍保留。
 
 ## Phase 3.5 首次发布与验收进度
 
