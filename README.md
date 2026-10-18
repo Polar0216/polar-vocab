@@ -2,7 +2,7 @@
 
 个人英语、德语词汇收集与间隔复习系统，目标是 GitHub Pages 静态 PWA + IndexedDB 本地优先 + 独立 GitHub 私有数据仓库。无需自建服务器、Serverless 或云数据库。
 
-**当前开发 Phase 4 Windows 收词器。** 源码包含快捷键选词、英德翻译、SQLite 队列、不可变采集上传和 Web 接收。2e1bf51已获授权并普通推送；首次CI因锁文件缺失可选依赖失败，修复及部署进度见 [Phase 4 报告](reports/phase-4/PHASE4_REPORT.md)，目前不能称正式站接收已验收。Phase 3.5 的真实401、iPhone同步及正常跨版本更新仍未验证；用户另行授权 Phase 4，不继续要求 iPhone 验收。原有测试环境与历史资料保留。
+**当前为 Phase 4 Windows 收词器。** 源码包含快捷键选词、英德翻译、SQLite 队列、不可变采集上传和 Web 接收。获授权普通推送后，首次CI的可选依赖锁问题已在d6c71d2修复，Actions构建与部署成功；[正式网站](https://polar0216.github.io/polar-vocab/)通过16项公开页面检查。真实私库采集全链路尚未完成，详见 [Phase 4 报告](reports/phase-4/PHASE4_REPORT.md)。Phase 3.5 的真实401、iPhone同步及正常跨版本更新仍未验证；用户另行授权 Phase 4，不继续要求 iPhone 验收。原有测试环境与历史资料保留。
 
 FSRS 使用锁定的 ts-fsrs 5.4.2，卡片、评分事件和待同步操作原子保存。GitHub Contents API、内存 PAT、三方合并、持久化批次与冲突决议已经接入。Windows 仅上传采集，不写主快照或复习状态；iOS 原生快捷指令未实现。
 
@@ -20,7 +20,7 @@ npm run desktop:package
 
 便携版：`artifacts/desktop/Polar-Vocab-Capture-0.4.0-win-x64.exe`，未签名，未购买证书。选中人工文本后按 Ctrl+Alt+S，核对 MyMemory 中文候选、可编辑释义与原句，再明确收藏。查询原文会交给供应商处理，可能保留；不要查询敏感内容。原剪贴板为图片/富文本且无法读取 UIA 时保持原状、回退手动输入，不能承诺全部软件兼容。
 
-收藏先保存 SQLite，离线可用。新 PAT 仅在设置中输入并在当前会话内存使用；不要发送到聊天。桌面只创建私库 `captures/` 批次，Web 生词箱预览并确认后由原同步引擎写正式词库。正式站须发布 Phase 4 Web 后才有接收入口。
+收藏先保存 SQLite，离线可用。PAT 仅在设置中输入并在当前会话内存使用；不要发送到聊天。可以使用已有、仍有效且权限符合要求的凭证，无需每次新建。桌面只创建私库 `captures/` 批次，正式网站生词箱已部署接收入口；预览并确认后由原同步引擎写正式词库。
 
 [Windows 使用说明](docs/WINDOWS_CAPTURE.md) · [采集协议](docs/CAPTURE_PROTOCOL.md) · [桌面故障排查](docs/DESKTOP_TROUBLESHOOTING.md)。源码在 `apps/desktop/`、共享边界在 `packages/shared/`、产物在 `artifacts/desktop/`；报告在 `reports/phase-4/`，自动测试输出在 `reports/test-results/phase-4/`，真实验收资料在忽略的 `.cache/phase4-real-*`，互不清理。
 

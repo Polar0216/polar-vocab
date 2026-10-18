@@ -1,6 +1,6 @@
-# Phase 4 Windows 收词器实施与发布前报告
+# Phase 4 Windows 收词器实施与发布报告
 
-日期：2026-10-18。范围：Phase4A–4F，本地代码、Windows便携产物、共享采集协议及Web接收；不进入Phase5。**用户已授权公开推送，2e1bf51已普通推送；部署进度见第16节。真实GitHub采集端到端尚未完成，不能标记Phase4全面验收通过。** 下文1–15节保留发布前验收截面，第16节的后续实际结果优先。
+日期：2026-10-18。范围：Phase4A–4F，本地代码、Windows便携产物、共享采集协议及Web接收；不进入Phase5。**用户已授权普通推送及Web部署，d6c71d2的Actions构建/部署成功，正式网站16项检查通过。真实GitHub采集端到端尚未完成，不能标记Phase4全面验收通过。** 下文1–15节保留发布前验收截面，第16节的后续实际结果优先；其中尚未部署、未获推送授权等描述仅反映当时状态。
 
 ## 1. 实际技术栈与项目组织
 
@@ -158,4 +158,10 @@ Pages新版本与Windows10、SmartScreen、低性能机器、外部软件兼容�
 
 首次 [Actions 39112883335](https://github.com/Polar0216/polar-vocab/actions/runs/39112883335) 失败，deploy跳过。已读取真实原始作业日志：Ubuntu24.04、Node24.21.0/npm11.19.0，在npm ci阶段EUSAGE，缺少@emnapi/core/runtime；不是Pages Source问题。旧npm11.6 dry-run遗漏此问题，不能据旧结果宣称跨平台干净安装通过。
 
-在全新隔离目录用CI同版本npm11.19.0重生成复制的锁文件，补回Tailwind WASM实际捆绑的@emnapi/core/runtime1.11.1及peer元数据；直接依赖与Electron版本不变。实际 `npx --yes npm@11.19.0 ci` 成功安装721包，提示两个未覆盖allowScripts的安装脚本与旧依赖弃用告警，未通过放宽安全策略绕过。在线audit仍0已知漏洞，Pages本机构建通过。原锁/错误选摘/完整隔离安装保留在忽略的 `.cache/phase4-publication/`，不清理旧资料。修复后远端CI和正式站结果继续记录，未通过前不标为部署成功。
+在全新隔离目录用CI同版本npm11.19.0重生成复制的锁文件，补回Tailwind WASM实际捆绑的@emnapi/core/runtime1.11.1及peer元数据；直接依赖与Electron版本不变。实际 `npx --yes npm@11.19.0 ci` 成功安装721包，提示两个未覆盖allowScripts的安装脚本与旧依赖弃用告警，未通过放宽安全策略绕过。在线audit仍0已知漏洞，Pages本机构建通过。原锁/错误选摘/完整隔离安装保留在忽略的 `.cache/phase4-publication/`，不清理旧资料。
+
+修复提交d6c71d2正常推送后，[Actions 39113341388](https://github.com/Polar0216/polar-vocab/actions/runs/39113341388) 实际显示Success：build成功（3分4秒）、deploy成功（8秒）。没有force push、GitHub Release或exe上传。这里只引用已观察的远端结论，不将本地测试计数冒充远端逐项日志。
+
+运行 `node .cache/phase4-publication/production-check.mjs` 对[正式网站](https://polar0216.github.io/polar-vocab/)进行隔离Edge检查，16项通过：HTTPS入口200、五页导航与刷新、新桌面接收入口及未授权保护、manifest路径、Service Worker URL/作用域、离线应用外壳与复习页刷新、320px五页无横向溢出、无页面异常。作用域为 `https://polar0216.github.io/polar-vocab/`。检查使用新profile且无私库凭证，不代表iPhone、旧PWA跨版本更新或私库同步通过；JSON及320px截图保留在 `.cache/phase4-publication/formal-check-oIfRdc/`。
+
+真实采集验收窗口使用最终便携exe及独立正式站profile，自动上传关闭。原记事本example事件完整保留，并增加一个带唯一标记的人工德语事件用于接收/编辑/重复读取；当前本机两条待上传，启动前已在线备份SQLite。私库目标固定为 `Polar0216/polar-vocab-data-test / main`，尚未完成两端预检、连接前备份和真实上传。用户选择沿用已有有效受限PAT，无需新建或撤销；新的应用会话不保存旧凭证，需用户本人在两端设置内重新输入。不得把待执行步骤记作通过，既有词库与学习历史不得清空。
