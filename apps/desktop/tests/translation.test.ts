@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { MyMemoryProvider } from '../src/translation'
 import { popupBounds } from '../src/window'
 describe('provider adapter (simulated responses)', () => {
+  it('accepts an explicitly marked MT result only for the exact queried segment and language', async () => {
+    const fake: typeof fetch = async () => Response.json({ responseStatus: 200, responseData: { translatedText: '未采用的模糊候选', match: 0.4 }, matches: [{ segment: 'A definition.', translation: '人工机器翻译样例', source: 'en-GB', target: 'zh-CN', match: 0.85, 'created-by': 'MT!' }] })
+    expect((await new MyMemoryProvider(fake).lookup('A definition.', 'en', new AbortController().signal)).text).toBe('人工机器翻译样例')
+    await expect(new MyMemoryProvider(fake).lookup('Other definition.', 'en', new AbortController().signal)).rejects.toThrow('精确匹配')
+    await expect(new MyMemoryProvider(fake).lookup('A definition.', 'de', new AbortController().signal)).rejects.toThrow('精确匹配')
+  })
   it('queries only explicit EN/DE to Chinese and preserves real candidate text', async () => {
     const urls: URL[] = [], fake: typeof fetch = async (input) => { urls.push(new URL(String(input))); return new Response(JSON.stringify({ responseStatus: 200, responseData: { translatedText: '人工测试候选', match: 1 } })) }
     const provider = new MyMemoryProvider(fake), signal = new AbortController().signal

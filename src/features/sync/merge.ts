@@ -1,4 +1,6 @@
 import { v5 } from 'uuid'
+import { senseMeanings } from '../../../packages/shared/lexicon'
+import type { Lexicon } from '../../domain/lexicon'
 import { dataSnapshotSchema, syncConflictSchema, type DataSnapshot, type SyncConflict } from '../../domain'
 import { canonicalJson, CAPTURE_NAMESPACE } from '../../storage/capture'
 import { logical } from './protocol'
@@ -92,11 +94,27 @@ export function mergeSnapshots(base: DataSnapshot | null, local: DataSnapshot, r
       if (equal(lv, bv)) return rv
       fields.push(path); return lv
     }
+    const lemmaKeys = ['lemma', 'encounteredForm', 'lemmaResolution']
+    const structuredLemma = entity === 'vocabulary' && [b, l, r].some(record => record.encounteredForm !== undefined || record.lemmaResolution !== undefined)
+    if (structuredLemma) {
+      const group = (record: RecordValue) => Object.fromEntries(lemmaKeys.map(key => [key, record[key]]))
+      const bg = group(b), lg = group(l), rg = group(r)
+      let selected = l
+      if (equal(lg, rg) || equal(bg, rg)) selected = l
+      else if (equal(bg, lg)) selected = r
+      else fields.push(...lemmaKeys)
+      for (const key of lemmaKeys) { if (selected[key] === undefined) delete merged[key]; else merged[key] = selected[key] }
+    }
     for (const key of new Set([...Object.keys(b), ...Object.keys(l), ...Object.keys(r)])) {
       if (mutableMeta.has(key) || identity.includes(key) || entity === 'card' && scheduleKeys.includes(key)) continue
+      if (structuredLemma && lemmaKeys.includes(key)) continue
       if (['en', 'de', 'dailyNew', 'reviewEnabled'].includes(key) && b[key] && l[key] && r[key]) {
         const bo = b[key] as Record<string, unknown>, lo = l[key] as Record<string, unknown>, ro = r[key] as Record<string, unknown>
         merged[key] = Object.fromEntries([...new Set([...Object.keys(bo), ...Object.keys(lo), ...Object.keys(ro)])].map((leaf) => [leaf, value(`${key}.${leaf}`, bo[leaf], lo[leaf], ro[leaf])]).filter(([, v]) => v !== undefined))
+      } else if (key === 'contexts' && [b[key], l[key], r[key]].some(contexts => Array.isArray(contexts) && contexts.some(context => context.translation !== undefined || context.translationLanguage !== undefined || context.translationSource !== undefined))) {
+        // Translation text/language/provenance belong together. Keep these contexts atomic;
+        // the legacy per-context merge below must not drop the extension fields.
+        const next = value(key, b[key], l[key], r[key]); if (next === undefined) delete merged[key]; else merged[key] = next
       } else if (key === 'contexts' && Array.isArray(b[key]) && Array.isArray(l[key]) && Array.isArray(r[key]) && (b[key] as {id: string}[]).every((item) => (l[key] as {id: string}[]).some((c) => c.id === item.id) && (r[key] as {id: string}[]).some((c) => c.id === item.id))) {
         const bm = new Map((b[key] as RecordValue[]).map((c) => [c.id, c])), lm = new Map((l[key] as RecordValue[]).map((c) => [c.id, c])), rm = new Map((r[key] as RecordValue[]).map((c) => [c.id, c]))
         merged[key] = [...new Set([...lm.keys(), ...rm.keys()])].sort().map((contextId) => {
@@ -105,6 +123,10 @@ export function mergeSnapshots(base: DataSnapshot | null, local: DataSnapshot, r
           return { id: contextId, text: value(`contexts.${contextId}.text`, bc?.text, lc.text, rc.text), source: value(`contexts.${contextId}.source`, bc?.source, lc.source, rc.source) }
         })
       } else { const next = value(key, b[key], l[key], r[key]); if (next === undefined) delete merged[key]; else merged[key] = next }
+    }
+    if (entity === 'vocabulary' && merged.lexicon) {
+      // Structured senses are an atomic field; derive the review projection from the chosen field.
+      merged.meanings = senseMeanings(merged.lexicon as Lexicon); delete merged.partOfSpeech
     }
     if (entity === 'card') {
       const group = (record: RecordValue) => Object.fromEntries(scheduleKeys.map((key) => [key, record[key]]))

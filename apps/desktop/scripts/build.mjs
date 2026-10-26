@@ -15,9 +15,11 @@ execFileSync(join(framework, 'csc.exe'), ['/nologo', '/target:exe', '/platform:x
   `/reference:${join(assemblies, 'UIAutomationClient', identity, 'UIAutomationClient.dll')}`,
   `/reference:${join(assemblies, 'UIAutomationTypes', identity, 'UIAutomationTypes.dll')}`,
   `/reference:${join(framework, 'WPF/WindowsBase.dll')}`, '/reference:System.Web.Extensions.dll', join(root, 'native/SelectionHelper.cs')], { stdio: 'inherit', windowsHide: true })
+execFileSync(join(framework, 'csc.exe'), ['/nologo', '/target:exe', '/platform:x64', '/optimize+', `/out:${join(output, 'native/CredentialHelper.exe')}`, '/reference:System.Windows.Forms.dll', '/reference:System.Drawing.dll', '/reference:System.Web.Extensions.dll', join(root, 'native/CredentialHelper.cs')], { stdio: 'inherit', windowsHide: true })
 const main = await bundle({ entryPoints: [join(root, 'src/main.ts')], outfile: join(output, 'main.cjs'), bundle: true, platform: 'node', format: 'cjs', target: 'node24', external: ['electron', 'node:sqlite'], sourcemap: false, logLevel: 'info', metafile: true })
 await bundle({ entryPoints: [join(root, 'src/preload.ts')], outfile: join(output, 'preload.cjs'), bundle: true, platform: 'node', format: 'cjs', target: 'node24', external: ['electron'], logLevel: 'info' })
-await viteBuild({ configFile: false, root: join(root, 'renderer'), base: './', plugins: [react()], build: { outDir: join(output, 'renderer'), emptyOutDir: true } })
+await bundle({ entryPoints: [join(root, 'src/feedback-preload.ts')], outfile: join(output, 'feedback-preload.cjs'), bundle: true, platform: 'node', format: 'cjs', target: 'node24', external: ['electron'], logLevel: 'info' })
+await viteBuild({ configFile: false, root: join(root, 'renderer'), base: './', plugins: [react()], build: { outDir: join(output, 'renderer'), emptyOutDir: true, rollupOptions: { input: { index: join(root, 'renderer/index.html'), feedback: join(root, 'renderer/feedback.html') } } } })
 // Keep the original 512px project icon; electron-builder generates Windows icon sizes.
 await copyFile('public/pwa-512.png', join(output, 'icon.png'))
 const names = new Set(['react', 'react-dom', 'scheduler'])
@@ -35,4 +37,5 @@ for (const name of [...names].sort()) {
   if (!files.length) throw new Error('Missing bundled dependency license: ' + name)
   for (const file of files) notices += '\n' + await readFile(join(directory, file), 'utf8') + '\n'
 }
+notices += '\n===== Optional online dictionary data (not bundled as a dictionary) =====\nWiktionary contributors, via Kaikki.org and WiktApi. Definitions and usage examples: CC-BY-SA-4.0.\nhttps://en.wiktionary.org/wiki/Wiktionary:Copyrights\nhttps://creativecommons.org/licenses/by-sa/4.0/\nEach saved sense retains its source page and changes. Referenced literary quotations and audio files are excluded.\nhttps://kaikki.org/dictionary/\nhttps://wiktapi.dev/\nChinese candidates: MyMemory / Translated (machine translation or translation memory), separate service terms.\nhttps://mymemory.translated.net/terms-and-conditions\n'
 await writeFile(join(output, 'THIRD_PARTY_NOTICES.txt'), notices)

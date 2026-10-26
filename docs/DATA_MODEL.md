@@ -1,6 +1,6 @@
-# 数据模型与交换协议（Phase 4）
+# 数据模型与交换协议（Capture 0.6.0）
 
-沿用 Phase 0 的六个模型与严格 Zod 校验，Phase 1 接入本地词库、导入和备份，Phase 2 接入真实 FSRS 调度、卡片事务和学习统计；Phase 3 接入 GitHub 合并。以下 1–10 节保留既有记录结构的说明，版本和新增字段以第 11 节为准。所有模型从 `src/domain/index.ts` 导出；schema 使用小驼峰名称，例如 `vocabularyEntrySchema`。本文件以代码为准，规划书中的 Lexeme/StudyCard 在正式协议中分别命名为 VocabularyEntry/Flashcard。
+沿用 Phase 0 的六个模型与严格 Zod 校验，Phase 1 接入本地词库、导入和备份，Phase 2 接入真实 FSRS 调度、卡片事务和学习统计；Phase 3 接入 GitHub 合并。以下 1–10 节保留既有记录结构的说明，版本和新增字段以第 11–14 节为准。所有模型从 `src/domain/index.ts` 导出；schema 使用小驼峰名称，例如 `vocabularyEntrySchema`。本文件以代码为准，规划书中的 Lexeme/StudyCard 在正式协议中分别命名为 VocabularyEntry/Flashcard。
 
 ## 1. 通用约定
 
@@ -33,7 +33,8 @@
 | `lemma` | 必填；保留原始正确大小写和变音字符，冠词单独存储 |
 | `meanings?` | 中文义项字符串数组，可完全缺省 |
 | `partOfSpeech?` | 词性字符串 |
-| `contexts?` | `{id: UUID, text: string, source?: string}[]`；同词条内上下文 ID 唯一 |
+| `contexts?` | 原句数组；旧字段 `id/text/source?` 与0.6.0可选译文/来源见第14节，同词条内上下文ID唯一 |
+| `encounteredForm?` / `lemmaResolution?` | 原始遇到词形与明确原型证明，见第14节 |
 | `source?` | 独立来源文本（最多 2,000 字符）；允许没有原句时仅保存来源 |
 | `tags?` | 标签数组 |
 | `origin` | `manual` / `clipboard` / `ios-csv` / `windows` / `web` |
@@ -119,7 +120,7 @@ SyncMetadata 仅本机使用：
 | `lastSyncedAt` / `updatedAt` | 最近成功同步 UTC 时间或 `null` / 元数据更新 UTC 时间 |
 | `lastErrorCode?` | offline / unauthorized / forbidden / rate-limited / sha-conflict / incompatible-schema / invalid-data / unknown；只存错误分类 |
 
-模型不包含 Token、Authorization 请求头或原始网络错误正文；不可将凭证填进任意附加字段。严格字段校验是协议边界，不是检测所有字符串中秘密内容的完整安全系统。凭证的未来内存管理见 SYNC_DESIGN。
+模型不包含 Token、Authorization 请求头或原始网络错误正文；不可将凭证填进任意附加字段。严格字段校验是协议边界，不是检测所有字符串中秘密内容的完整安全系统。Web 内存授权与桌面可选 Windows 安全存储见 [SYNC_DESIGN](SYNC_DESIGN.md) 和 [INTEGRATED_AUTH](INTEGRATED_AUTH.md)。
 
 ## 7. 完整快照与本机协议记录
 
@@ -230,6 +231,53 @@ LocalBackup 现在导出 **backupVersion=2**，其 local 在原五集合之外�
 
 `packages/shared/` 直接重导出既有模型与 UUIDv5 实现，新增的 `CaptureBatch` 仅是 `format/protocolVersion/schemaVersion/id/deviceId/month/events` 严格包装；详细预算、路径和不可变语义见 [CAPTURE_PROTOCOL](CAPTURE_PROTOCOL.md)。不修改 `DataSnapshot`、主快照协议或FSRS字段，不需要Dexie升级。
 
-桌面 SQLite `user_version=1`，`metadata` 保存设备UUID、DesktopSettings及无Token的目标三元组；`captures` 保存不可变事件JSON、时间、状态、batch_id、固定错误码；`batches` 保存规范正文、原目标、状态、SHA及固定错误码。状态包装不会写进远端CaptureEvent。WAL、synchronous FULL、本地保存/冻结/精确ACK事务；上传中新增事件不加入旧批次。未来版本或损坏记录拒绝并保留原文件，不清空迁移。
+Phase 4/0.5.0 当时的桌面 SQLite 为 `user_version=1`（0.6.0副本迁移为2，见第14节），`metadata` 保存设备UUID、DesktopSettings及无Token的目标三元组；`captures` 保存不可变事件JSON、时间、状态、batch_id、固定错误码；`batches` 保存规范正文、原目标、状态、SHA及固定错误码。状态包装不会写进远端CaptureEvent。WAL、synchronous FULL、本地保存/冻结/精确ACK事务；上传中新增事件不加入旧批次。未来版本或损坏记录拒绝并保留原文件，不清空迁移。
 
-DesktopSettings 只含快捷键、默认语言、主题、复制回退、自动查词和自动上传开关；与 Web AppSettings 分开，不同步学习配额。默认自动上传关闭。不存在Token字段或「记住此设备」。队列导出是 `polar-vocab-desktop-queue / queueVersion=1`，用于保留采集/outbox证据，不是Web LocalBackup；当前不提供导出文件的自动恢复入口。
+DesktopSettings 包含快捷键、默认语言、主题、复制回退、自动查词、自动上传及0.6.0的 `onlineLookup` 外部查询开关；旧设置缺少该开关时默认true。它与 Web AppSettings 分开，不同步学习配额。默认自动上传关闭，没有Token字段；0.6.0「记住此设备」由独立 Windows 凭证管理器实现，非 SQLite 字段。旧版队列导出为 `polar-vocab-desktop-queue / queueVersion=1`，0.6.0导出queueVersion=2，用于保留采集/outbox证据，不是Web LocalBackup；当前不提供导出文件的自动恢复入口。
+
+
+## 13. Phase 4.1：结构化义项（优先于旧字段说明）
+
+代码：src/domain/lexicon.ts、vocabulary.ts，编辑/归并工具在 packages/shared/lexicon.ts。VocabularyPayload 和 VocabularyEntry 新增可选 lexicon；旧记录省略该字段，不自动生成义项或改写原始 CaptureEvent。
+
+| 字段 | 含义与上限 |
+| --- | --- |
+| lexicon.schemaVersion | 1；结构化部分独立版本 |
+| senses[] | 最多64项；每项稳定 UUID、partOfSpeech、chinese、definition、definitionLanguage、examples、sources |
+| sense.id | 字典项按 edition、语言、NFC原词、词性、完整原文定义生成 UUIDv5；不包含中文译文、时间、请求ID或序号。上游改变原定义会生成新ID，不能假定是同一语义 |
+| sense.examples[] | 最多5项；UUID、原文、可选译文及译文语言、逐字段来源。查询目前只复制最多2条非引用使用例句 |
+| phonetic | 可选IPA，最多200字符，英德均可用 |
+| forms[] | 最多160项；稳定UUID、form、partOfSpeech、原始tags及source。是词典明确给出的词形，不是本地推断 |
+| fieldSources | IPA及de.article、de.plural、de.infinitive等字段的来源；每项provider、可选HTTPS链接、许可、modified |
+| removedSenseIds | 最多256个删除义项ID，重复查询不自动恢复这些候选；不是删除整个词条的墓碑 |
+
+来源 provider 为 wiktionary、mymemory、manual 或 legacy；当前不会自动把旧记录转成 legacy 义项。人工改写保留原来源并标记 modified=true，人工新增使用UUIDv4及manual来源。定义、中文、词性和例句分别标注，不把中文译文当词典原文，不把德语例句的英语译文标成中文。
+
+meanings 是所选义项非空中文的有序投影，Zod 会拒绝投影与义项不一致的记录。新义项没有全局唯一词性；旧 partOfSpeech 继续可读。复习沿用 meanings，不改算法、卡片、评分或调度字段；没有中文时可收藏待整理，仍需原有建卡条件。
+
+德语主要字段仍保存在既有 de 对象。明确 gender 标签映射到冠词；复数、不定式、过去式、第二分词、助动词、现在时人称均从对应词形标签读取。存在歧义或缺少证据时留空，所有原始词形仍可查看。手动修改同时更新字段来源标记。
+
+0.5.0 当时 SQLite 表和 user_version=1 保持；0.6.0物理版本2迁移见第14节，事件JSON仍原样持久化。CaptureEvent外层 schemaVersion、事件ID和首次词条UUIDv5算法保持不变。含lexicon的批次及主快照使用protocolVersion=2，旧数据继续使用1；新客户端读1/2，未知版本拒绝。旧客户端不能读2，必须先更新所有Web同步端。完整JSON保留义项，旧CSV仅平面中文视图；CSV补空不得改动既有结构化义项。详情见 DICTIONARY_PROVIDERS.md、CAPTURE_PROTOCOL.md 和 Phase4.1报告。
+
+
+## 14. Capture 0.6.0：原词形、原型证据与原句译文
+
+新增字段仍为可选，旧词条/CaptureEvent缺省时原样可读，不自动补写；业务 `schemaVersion=1`、采集事件ID、设备ID、首次词条UUIDv5和FSRS记录保持。
+
+| 字段 | 类型与校验 |
+| --- | --- |
+| `VocabularyPayload.encounteredForm?` | 非空文本，最多500字符；原句里实际遇到的词形，与收藏目标lemma分开 |
+| `lemmaResolution?` | `{lemma, partOfSpeech?, tags, source}`；最多20个非空标签，source为FieldSource |
+| `context.translation?` | 非空中文句译，最多20,000字符；未勾选保留时不写入 |
+| `context.translationLanguage?` | 仅 `zh-CN`；存在译文时必须有此字段 |
+| `context.translationSource?` | FieldSource；存在译文时必须标注，不以词典来源冒充机器翻译 |
+
+存在 `lemmaResolution` 时必须同时有 `encounteredForm`，且证明的lemma必须等于当前词条lemma。用户手改收藏目标后撤销不匹配的证明。候选来源只由语言已确认的词典明确关系提供；`went`的go/wend等歧义保留给用户选择，不从后缀生成证明。
+
+FieldSource沿用 `provider=wiktionary/mymemory/manual/legacy`，可带HTTPS URL、license及modified。人工修改保留可追溯来源并标记modified，不制造不存在的词典字段。一个原句中的多个词可复用同一context UUID；每个事件仍自足保存正文及可选译文，不依赖外部context表或云端数据库。
+
+`payloadRequiresProtocol2`统一检查lexicon、原词形、原型证明和任何context译文/语言/来源字段。只要存在其一，采集批次和主快照都使用协议2，即使没有lexicon也不能藏进协议1。新客户端读1/2，未知版本拒绝；旧客户端不能读协议2。SQLite物理版本2是独立保护，与以上wire协议及业务schema无关。
+
+新SQLite由旧v1在线备份副本迁移为v2，事件、冻结批次、回执、设备及设置身份逐项校验，原源不改写。实际选定的旧0.5.0候选源为空（0事件、0批次）；迁入证明了目录与身份保留，不代表迁入了不存在的学习记录。无Token进入该队列、导出或迁移清单；可选凭证位于Windows安全存储。
+
+三方合并将lemma/encounteredForm/lemmaResolution作为关联组处理；任一上下文含译文扩展时，整个contexts字段原子比较，避免旧逐字段路径丢失译文来源。lexicon仍为原子字段，冲突显式解决。Web编辑和导入回归已覆盖这些保留行为，真实私库及发布结果另以整合报告为准。

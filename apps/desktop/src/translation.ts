@@ -29,10 +29,10 @@ export class MyMemoryProvider implements TranslationProvider {
       if (controller.signal.aborted) throw new Error('aborted')
       const bytes = new Uint8Array(size); let offset = 0
       for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length }
-      const data = z.object({ responseStatus: z.union([z.number(), z.string()]), responseData: z.object({ translatedText: z.string().trim().min(1).max(4000), match: z.number().min(0).max(1) }), quotaFinished: z.boolean().optional(), matches: z.array(z.object({ segment: z.string().max(20_000), translation: z.string().max(4000), source: z.string().max(100), target: z.string().max(100), match: z.number().min(0).max(1) })).max(100).optional() }).parse(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)))
+      const data = z.object({ responseStatus: z.union([z.number(), z.string()]), responseData: z.object({ translatedText: z.string().trim().min(1).max(4000), match: z.number().min(0).max(1) }), quotaFinished: z.boolean().optional(), matches: z.array(z.object({ segment: z.string().max(20_000), translation: z.string().max(4000), source: z.string().max(100), target: z.string().max(100), match: z.number().min(0).max(1), 'created-by': z.string().optional() })).max(100).optional() }).parse(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)))
       if (String(data.responseStatus) !== '200' || data.quotaFinished || /MYMEMORY WARNING|QUERY LENGTH LIMIT|INVALID LANGUAGE PAIR/i.test(data.responseData.translatedText)) throw new Error('翻译额度不足或语言不支持，请手动填写。')
       const normalized = (value: string) => value.trim().normalize('NFC').toLocaleLowerCase(lang)
-      const exact = data.matches?.find(item => normalized(item.segment) === normalized(text) && item.source.split('-')[0] === lang && /^zh(?:-|$)/i.test(item.target) && item.match >= 0.99 && /\p{Script=Han}/u.test(item.translation))
+      const exact = data.matches?.find(item => normalized(item.segment) === normalized(text) && item.source.split('-')[0] === lang && /^zh(?:-|$)/i.test(item.target) && (item.match >= 0.99 || item['created-by'] === 'MT!') && /\p{Script=Han}/u.test(item.translation))
       const candidate = exact?.translation.trim() ?? (data.responseData.match >= 0.99 && /\p{Script=Han}/u.test(data.responseData.translatedText) ? data.responseData.translatedText : '')
       if (!candidate) throw new Error('翻译服务未返回精确匹配的中文候选，请补充短语后重试或手动填写。')
       return { text: candidate, provider: 'mymemory', attribution: 'MyMemory / Translated（机器翻译或翻译记忆候选，请人工核对）' }

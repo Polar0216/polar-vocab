@@ -6,7 +6,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { CaptureQueue } from '../src/queue'
 import { CaptureUploader } from '../src/uploader'
 import { CaptureGitHubFake } from '../../../tests/mocks/capture-github'
-import type { CaptureEvent } from '../../../packages/shared'
+import { emptyLexicon, editSense, manualSense, type CaptureEvent } from '../../../packages/shared'
 
 const root = resolve('.cache/phase4-unit'); mkdirSync(root, { recursive: true })
 const queues: CaptureQueue[] = []
@@ -14,6 +14,17 @@ function setup() { const path = join(mkdtempSync(join(root, 'queue-')), 'capture
 function event(queue: CaptureQueue, lemma = 'artificial-example'): CaptureEvent { return { id: randomUUID(), schemaVersion: 1, deviceId: queue.deviceId, capturedAt: '2026-10-18T01:00:00.000Z', origin: 'windows', payload: { lang: 'en', lemma, meanings: ['人工测试释义'] } } }
 afterEach(() => { for (const queue of queues) { try { queue.close() } catch { /* Already closed during a restart test. */ } } queues.length = 0 })
 describe('actual SQLite local outbox', () => {
+  it('persists structured senses beside legacy events without rewriting IDs, then freezes protocol2', () => {
+    const { queue, path } = setup(), legacy = event(queue), structured = event(queue, 'structured-artificial')
+    const lexicon = { ...emptyLexicon(), senses: [editSense(manualSense(), 'chinese', '人工结构化义项')] }
+    structured.payload.lexicon = lexicon; structured.payload.meanings = ['人工结构化义项']
+    queue.save(legacy); queue.save(structured); queue.save(structured); queue.close()
+    const reopened = new CaptureQueue(path); queues.push(reopened)
+    expect(reopened.find(legacy.id)).toEqual(legacy); expect(reopened.find(structured.id)).toEqual(structured)
+    expect(reopened.list('', 'all').total).toBe(2)
+    const frozen = reopened.freeze('artificial-target')!.batch
+    expect(frozen.protocolVersion).toBe(2); expect(frozen.events.find(item => item.id === structured.id)?.payload.lexicon).toEqual(lexicon)
+  })
   it('saves immediately, retries the original ID, and survives a real database close/reopen', () => {
     const { queue, path } = setup(), original = event(queue); queue.save(original); queue.save(original)
     expect(queue.list('', 'all').total).toBe(1); queue.close()

@@ -22,11 +22,11 @@ test('real Windows Electron runtime: isolated IPC, explicit saves, SQLite faults
     let page = await app.firstWindow()
     await expect(page.getByRole('heading', { name: 'Polar Vocab Capture' })).toBeVisible()
     expect(await page.evaluate(() => ({ node: typeof (globalThis as Record<string, unknown>).require, process: typeof (globalThis as Record<string, unknown>).process, keys: Object.keys(window.polarCapture) }))).toMatchObject({ node: 'undefined', process: 'undefined' })
-    expect(await app.evaluate(({ BrowserWindow }) => { const contents = BrowserWindow.getAllWindows()[0].webContents as unknown as { getLastWebPreferences(): { contextIsolation: boolean; sandbox: boolean; nodeIntegration: boolean } }; const p = contents.getLastWebPreferences(); return { isolated: p.contextIsolation, sandbox: p.sandbox, node: p.nodeIntegration } })).toEqual({ isolated: true, sandbox: true, node: false })
+    expect(await app.evaluate(({ BrowserWindow }) => { const contents = BrowserWindow.getAllWindows().find(window => window.webContents.getURL() === 'polar://capture/index.html')!.webContents as unknown as { getLastWebPreferences(): { contextIsolation: boolean; sandbox: boolean; nodeIntegration: boolean } }; const p = contents.getLastWebPreferences(); return { isolated: p.contextIsolation, sandbox: p.sandbox, node: p.nodeIntegration } })).toEqual({ isolated: true, sandbox: true, node: false })
     expect(await page.evaluate(async () => (await window.polarCapture.status()).ok)).toBe(true)
     expect(await app.evaluate(({ globalShortcut }) => globalShortcut.isRegistered('Control+Alt+D'))).toBe(true)
     await page.getByLabel('单词或短语', { exact: true }).fill('artificial-desktop-persist')
-    await page.getByLabel('中文释义', { exact: true }).fill('人工测试，离线收藏')
+    await page.getByLabel('中文释义 1', { exact: true }).fill('人工测试，离线收藏')
     await page.getByRole('button', { name: '将当前原文作为原句' }).click()
     await page.getByLabel('单词或短语', { exact: true }).press('Enter')
     await expect(page.getByRole('button', { name: '已收藏到本机', exact: true })).toBeDisabled()
@@ -49,15 +49,22 @@ test('real Windows Electron runtime: isolated IPC, explicit saves, SQLite faults
     await page.getByRole('button', { name: '新词', exact: true }).click()
     await page.getByLabel('单词或短语', { exact: true }).fill('not-collected')
     await page.keyboard.press('Escape')
-    await expect.poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isVisible())).toBe(false)
-    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].show())
+    await expect.poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find(window => window.webContents.getURL() === 'polar://capture/index.html')!.isVisible())).toBe(false)
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find(window => window.webContents.getURL() === 'polar://capture/index.html')!.show())
     await page.getByRole('button', { name: '设置', exact: true }).click()
     await page.getByLabel('主题', { exact: true }).selectOption('dark')
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
     await page.getByRole('button', { name: '保存设置', exact: true }).click()
-    await page.getByLabel('全局快捷键').selectOption('Control+Shift+D')
+    const replacement = await app.evaluate(({ globalShortcut }) => {
+      for (const candidate of ['Control+Shift+D', 'Alt+Shift+S', 'Control+Alt+S']) {
+        if (globalShortcut.register(candidate, () => undefined)) { globalShortcut.unregister(candidate); return candidate }
+      }
+      throw new Error('所有备用测试快捷键均被占用，不能验证更换快捷键。')
+    })
+    info.annotations.push({ type: 'replacement-shortcut', description: replacement })
+    await page.getByLabel('全局快捷键').selectOption(replacement)
     await page.getByRole('button', { name: '保存设置', exact: true }).click()
-    await expect.poll(() => app.evaluate(({ globalShortcut }) => globalShortcut.isRegistered('Control+Shift+D'))).toBe(true)
+    await expect.poll(() => app.evaluate(({ globalShortcut }, key) => globalShortcut.isRegistered(key), replacement)).toBe(true)
     expect(await app.evaluate(({ globalShortcut }) => globalShortcut.isRegistered('Control+Alt+D'))).toBe(false)
     await page.screenshot({ path: info.outputPath('desktop-settings-dark.png'), fullPage: true })
     await app.close()
@@ -66,7 +73,7 @@ test('real Windows Electron runtime: isolated IPC, explicit saves, SQLite faults
     const reply = await page.evaluate(() => window.polarCapture.queue({ search: '', state: 'all', offset: 0 }))
     expect(reply.ok && reply.value.total).toBe(2)
     if (reply.ok) { expect(reply.value.items.find(row => row.event.payload.lang === 'de')?.event.payload).toMatchObject({ lemma: 'Prüfwort', de: { article: 'das', plural: 'Prüfwörter' } }); expect(reply.value.items.every(row => row.state === 'pending')).toBe(true) }
-    expect(await app.evaluate(({ globalShortcut }) => globalShortcut.isRegistered('Control+Shift+D'))).toBe(true)
+    expect(await app.evaluate(({ globalShortcut }, key) => globalShortcut.isRegistered(key), replacement)).toBe(true)
     await page.getByRole('button', { name: '本地队列', exact: true }).click()
     await page.screenshot({ path: info.outputPath('desktop-queue-dark.png'), fullPage: true })
   } finally { await app.close() }
@@ -87,7 +94,7 @@ test('a separate real Electron process owns a conflicting shortcut; failed setti
   } finally { if (app) await app.close(); await holder.close() }
 })
 
-test('actual MyMemory requests via the desktop IPC and Electron network stack', async ({}, info) => {
+test('actual dictionary and translation requests via the desktop IPC and Electron network stack', async ({}, info) => {
   test.skip(process.env.PHASE4_LIVE_TRANSLATION !== '1', 'Explicit opt-in: external provider and its free anonymous quota.')
   const app = await launch(mkdtempSync(join(root, 'provider-')), 'Control+Alt+D'), results: unknown[] = []
   try {
@@ -96,12 +103,12 @@ test('actual MyMemory requests via the desktop IPC and Electron network stack', 
       const reply = await page.evaluate(({ text, lang }) => window.polarCapture.lookup({ id: crypto.randomUUID(), text, lang }), { text, lang })
       results.push({ text, lang, reply })
       expect(reply.ok, JSON.stringify(reply)).toBe(true)
-      if (reply.ok) expect(reply.value.text.trim().length).toBeGreaterThan(0)
+      if (reply.ok) expect(reply.value.lexicon.senses.length).toBeGreaterThan(0)
     }
     await page.getByLabel('单词或短语', { exact: true }).fill('example')
-    await page.getByRole('button', { name: '查询中文释义', exact: true }).click()
+    await page.getByRole('button', { name: '查询词典', exact: true }).click()
     await expect(page.getByRole('status')).toContainText('查询完成', { timeout: 15_000 })
-    await page.getByLabel('中文释义', { exact: true }).fill('人工修改后的中文释义')
+    await page.getByLabel('中文释义 1', { exact: true }).fill('人工修改后的中文释义')
     await page.screenshot({ path: info.outputPath('actual-translation-edit.png'), fullPage: true })
   } finally { writeFileSync(join(root, 'provider-results-' + Date.now() + '.json'), JSON.stringify({ recordedAt: new Date().toISOString(), source: 'actual Electron net.fetch / MyMemory', results }, null, 2)); await app.close() }
 })

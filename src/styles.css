@@ -542,3 +542,9 @@ input[type=checkbox], input[type=radio] { accent-color: var(--accent); }
 .capture-preview-list { list-style: none; padding: 0; }
 .capture-preview-list li { padding: .9rem 0; border-bottom: 1px solid var(--border, #ccd9d0); overflow-wrap: anywhere; }
 .capture-preview-list p { margin: .45rem 0; }
+
+.sense-card { min-width: 0; margin: .8rem 0; padding: 1rem; border: 1px solid var(--border); border-radius: .75rem; }
+.sense-card .field { margin-bottom: .6rem; }
+.sense-card legend { padding: 0 .4rem; }
+.sense-example { padding-left: .75rem; border-left: 2px solid var(--border); }
+.sense-card .hint { font-size: .8rem; overflow-wrap: anywhere; }

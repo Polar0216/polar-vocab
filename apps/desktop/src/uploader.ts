@@ -7,6 +7,8 @@ export class CaptureUploader {
   private client?: GitHubClient
   private repository?: CaptureRepository
   private preview?: { client: GitHubClient; repository: CaptureRepository; target: Target }
+  private testing?: GitHubClient
+  private previewGeneration = 0
   private generation = 0
   private nextAttempt = 0
   syncing = false
@@ -17,15 +19,20 @@ export class CaptureUploader {
   connected(): boolean { return Boolean(this.repository) }
   async test(input: { owner: string; repository: string; branch: string; token: string }): Promise<string> {
     if (this.syncing) throw new Error('上传期间不能切换连接，请等待。')
-    this.preview?.client.clear(); this.preview = undefined
+    this.cancelPreview()
+    const previewGeneration = this.previewGeneration
     const client = new GitHubClient(input.token, this.fetcher)
+    this.testing = client
     try {
       const target = await client.verify({ owner: input.owner, repository: input.repository, branch: input.branch, path: 'data/state.json' })
       const repository = await client.captures(target)
+      if (previewGeneration !== this.previewGeneration || this.testing !== client) throw new ApiError('aborted')
       this.preview = { client, repository, target }
+      this.testing = undefined
       return `${target.owner}/${target.repository} · ${target.branch}`
-    } catch (error) { client.clear(); throw error }
+    } catch (error) { client.clear(); if (this.testing === client) this.testing = undefined; throw error }
   }
+  previewTarget(): Omit<Target, 'path'> | undefined { const target = this.preview?.target; return target ? { owner: target.owner, repository: target.repository, branch: target.branch } : undefined }
   confirm(): string {
     if (this.syncing) throw new Error('上传期间不能切换连接，请等待。')
     const plan = this.preview
@@ -35,13 +42,13 @@ export class CaptureUploader {
     this.nextAttempt = 0; this.lastError = ''
     return `${plan.target.owner}/${plan.target.repository} · ${plan.target.branch}`
   }
-  disconnect(): void { this.generation++; this.client?.clear(); this.preview?.client.clear(); this.client = undefined; this.repository = undefined; this.preview = undefined; this.queue.setConnection(undefined); this.lastError = '' }
-  cancelPreview(): void { this.preview?.client.clear(); this.preview = undefined }
-  endSession(): void { this.generation++; this.client?.clear(); this.preview?.client.clear(); this.client = undefined; this.repository = undefined; this.preview = undefined }
+  disconnect(): void { this.endSession(); this.queue.setConnection(undefined); this.lastError = '' }
+  cancelPreview(): void { this.previewGeneration++; this.testing?.clear(); this.testing = undefined; this.preview?.client.clear(); this.preview = undefined }
+  endSession(): void { this.generation++; this.client?.clear(); this.client = undefined; this.repository = undefined; this.cancelPreview() }
   async sync(): Promise<string> {
     if (this.syncing) throw new Error('已有上传正在进行，请等待。')
     const repository = this.repository, generation = this.generation
-    if (!repository) throw new Error('请先测试并确认连接；重启后需要重新输入凭证。')
+    if (!repository) throw new Error('请先连接 GitHub；可在设置恢复此设备的已记住授权。')
     if (Date.now() < this.nextAttempt) throw new Error('请等待当前退避时间结束后重试；队列仍在本机。')
     const targetKey = canonicalJson({ owner: repository.target.owner, repository: repository.target.repository, branch: repository.target.branch })
     this.syncing = true; this.lastError = ''

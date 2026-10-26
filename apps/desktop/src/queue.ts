@@ -1,7 +1,8 @@
 import { DatabaseSync } from 'node:sqlite'
 import { randomUUID } from 'node:crypto'
-import { canonicalJson, captureEventSchema, captureBatchSchema, encodeBatch, batchPath, type CaptureEvent, type CaptureBatch } from '../../../packages/shared'
+import { canonicalJson, captureEventSchema, captureBatchSchema, encodeBatch, batchPath, payloadRequiresProtocol2, type CaptureEvent, type CaptureBatch } from '../../../packages/shared'
 import { defaultSettings, desktopSettingsSchema, type DesktopSettings, type QueueItem, type QueueState } from './contracts'
+import { CREATE_QUEUE_SQL, inspectQueueDatabase, inspectOpenQueue, QueueDataError, QUEUE_VERSION } from './queue-storage'
 
 interface QueueRow { id: string; event: string; state: QueueState; batch_id: string | null; error_code: string | null }
 export interface FrozenBatch { batch: CaptureBatch; target: string; sha: string | null }
@@ -11,22 +12,23 @@ export class CaptureQueue {
   private readonly db: DatabaseSync
   readonly deviceId: string
   constructor(path: string) {
+    const existing = inspectQueueDatabase(path)
+    if (existing?.version === 1) throw new QueueDataError('legacy-version', '旧版队列须先备份迁移，未直接改写。')
     this.db = new DatabaseSync(path)
-    this.db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=3000;')
-    const version = Number(this.db.prepare('PRAGMA user_version').get()!.user_version)
-    if (version > 1) { this.db.close(); throw new Error('本地采集队列版本过新，未改写。') }
-    this.db.exec(`CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY,value TEXT NOT NULL);
-      CREATE TABLE IF NOT EXISTS batches (id TEXT PRIMARY KEY,body TEXT NOT NULL,target TEXT NOT NULL,state TEXT NOT NULL,sha TEXT,error_code TEXT);
-      CREATE TABLE IF NOT EXISTS captures (id TEXT PRIMARY KEY,event TEXT NOT NULL,captured_at TEXT NOT NULL,state TEXT NOT NULL,batch_id TEXT REFERENCES batches(id),error_code TEXT);
-      CREATE INDEX IF NOT EXISTS captures_state ON captures(state,captured_at); PRAGMA user_version=1;`)
+    try {
+      const version = Number(this.db.prepare('PRAGMA user_version').get()!.user_version)
+      if (![0, QUEUE_VERSION].includes(version)) throw new QueueDataError('future-version', '本地采集队列版本不兼容，未改写。')
+      this.db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=3000;')
+      if (version === 0) this.db.exec(CREATE_QUEUE_SQL)
+    } catch (error) { this.db.close(); throw error }
     this.deviceId = this.meta('deviceId') ?? randomUUID()
     this.db.prepare('INSERT OR IGNORE INTO metadata(key,value) VALUES(?,?)').run('deviceId', this.deviceId)
     this.transaction(() => {
       this.db.prepare("UPDATE batches SET state='failed',error_code='interrupted' WHERE state='uploading'").run()
       this.db.prepare("UPDATE captures SET state='failed',error_code='interrupted' WHERE state='uploading'").run()
     })
-    // Corruption is reported; an invalid queue is never replaced by an empty queue.
-    for (const row of this.db.prepare('SELECT event FROM captures').all()) captureEventSchema.parse(JSON.parse(String(row.event)))
+    // Validate before the recovery UPDATEs on future opens; do not replace a bad queue.
+    inspectOpenQueue(this.db)
   }
   private meta(key: string): string | undefined { return this.db.prepare('SELECT value FROM metadata WHERE key=?').get(key)?.value as string | undefined }
   private transaction<T>(work: () => T): T {
@@ -82,11 +84,11 @@ export class CaptureQueue {
       for (const row of rows) {
         const event = captureEventSchema.parse(JSON.parse(row.event))
         if (event.capturedAt.slice(0, 7) !== month) continue
-        try { encodeBatch({ format: 'polar-vocab-capture-batch', protocolVersion: 1, schemaVersion: 1, id, deviceId: this.deviceId, month, events: [...events, event] }) }
+        try { encodeBatch({ format: 'polar-vocab-capture-batch', protocolVersion: [...events, event].some(item => payloadRequiresProtocol2(item.payload)) ? 2 : 1, schemaVersion: 1, id, deviceId: this.deviceId, month, events: [...events, event] }) }
         catch { if (events.length) break; throw new Error('单条记录超出采集批次预算，请导出并人工核查。') }
         events.push(event)
       }
-      const batch = captureBatchSchema.parse({ format: 'polar-vocab-capture-batch', protocolVersion: 1, schemaVersion: 1, id, deviceId: this.deviceId, month, events })
+      const batch = captureBatchSchema.parse({ format: 'polar-vocab-capture-batch', protocolVersion: events.some(item => payloadRequiresProtocol2(item.payload)) ? 2 : 1, schemaVersion: 1, id, deviceId: this.deviceId, month, events })
       const body = encodeBatch(batch)
       this.db.prepare("INSERT INTO batches(id,body,target,state) VALUES(?,?,?,'prepared')").run(id, body, target)
       for (const event of events) this.db.prepare("UPDATE captures SET batch_id=?,state='uploading' WHERE id=? AND batch_id IS NULL").run(id, event.id)
@@ -113,7 +115,7 @@ export class CaptureQueue {
   }
   retry(): void { this.transaction(() => { this.db.prepare("UPDATE captures SET state=CASE WHEN batch_id IS NULL THEN 'pending' ELSE 'failed' END,error_code=NULL WHERE state='failed'").run() }) }
   export(): string {
-    return JSON.stringify({ format: 'polar-vocab-desktop-queue', queueVersion: 1, exportedAt: new Date().toISOString(), deviceId: this.deviceId,
+    return JSON.stringify({ format: 'polar-vocab-desktop-queue', queueVersion: QUEUE_VERSION, exportedAt: new Date().toISOString(), deviceId: this.deviceId,
       records: this.db.prepare('SELECT event,state,batch_id,error_code FROM captures ORDER BY captured_at,id').all().map((row) => ({ event: JSON.parse(String(row.event)), state: row.state, batchId: row.batch_id, errorCode: row.error_code })),
       batches: this.db.prepare('SELECT body,target,state,sha FROM batches ORDER BY rowid').all().map((row) => ({ batch: JSON.parse(String(row.body)), path: batchPath(JSON.parse(String(row.body))), target: row.target, state: row.state, sha: row.sha })),
     }, null, 2)

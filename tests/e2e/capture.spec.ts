@@ -1,12 +1,22 @@
 import { expect, test } from '@playwright/test'
 import { randomUUID } from 'node:crypto'
 import { FakeGitHub } from '../unit/sync/fake-github'
-import { batchPath, encodeBatch, type CaptureBatch } from '../../packages/shared'
+import { batchPath, editSense, emptyLexicon, encodeBatch, manualSense, type CaptureBatch } from '../../packages/shared'
 import { toBase64 } from '../../src/integrations/github/client'
 
-test('desktop batch preview, explicit ingestion, repeat receipts and Phase 3 upload preserve user edits', async ({ page, context }) => {
+for (const variant of ['legacy v1', 'structured v2', 'integrated sentence v2']) test(`${variant} desktop batch preview, explicit ingestion, repeat receipts and Phase 3 upload preserve user edits`, async ({ page, context }) => {
+  const structured = variant !== 'legacy v1', integrated = variant === 'integrated sentence v2'
   const fake = new FakeGitHub(), deviceId = randomUUID(), id = randomUUID()
-  const batch: CaptureBatch = { format: 'polar-vocab-capture-batch', protocolVersion: 1, schemaVersion: 1, id: randomUUID(), deviceId, month: '2026-10', events: [{ id, deviceId, schemaVersion: 1, capturedAt: '2026-10-18T01:00:00.000Z', origin: 'windows', payload: { lang: 'de', lemma: 'Prüfwort', meanings: ['桌面人工释义'], de: { article: 'das', plural: 'Prüfwörter' }, contexts: [{ id: randomUUID(), text: 'Ein künstliches Prüfwort.' }], source: 'windows:artificial-e2e' } }] }
+  const batch: CaptureBatch = { format: 'polar-vocab-capture-batch', protocolVersion: structured ? 2 : 1, schemaVersion: 1, id: randomUUID(), deviceId, month: '2026-10', events: [{ id, deviceId, schemaVersion: 1, capturedAt: '2026-10-18T01:00:00.000Z', origin: 'windows', payload: { lang: 'de', lemma: 'Prüfwort', meanings: ['桌面人工释义'], de: { article: 'das', plural: 'Prüfwörter' }, contexts: [{ id: randomUUID(), text: 'Ein künstliches Prüfwort.' }], source: 'windows:artificial-e2e' } }] }
+  if (structured) {
+    const lexicon = { ...emptyLexicon(), senses: [editSense(editSense(manualSense(), 'chinese', '桌面人工释义'), 'partOfSpeech', 'noun')] }
+    batch.events[0].payload.lexicon = lexicon
+  }
+  if (integrated) {
+    batch.events[0].payload.encounteredForm = 'Prüfwörter'
+    batch.events[0].payload.lemmaResolution = { lemma: 'Prüfwort', tags: ['form-of', 'plural'], source: { provider: 'wiktionary', url: 'https://en.wiktionary.org/wiki/Pr%C3%BCfw%C3%B6rter#German', license: 'CC-BY-SA-4.0' } }
+    Object.assign(batch.events[0].payload.contexts![0], { translation: '一个人工测试词。', translationLanguage: 'zh-CN', translationSource: { provider: 'manual' } })
+  }
   const path = batchPath(batch), text = encodeBatch(batch), sha = 'e'.repeat(40), size = Buffer.byteLength(text)
   await context.route('https://api.github.com/**', async route => {
     const request = route.request(), url = new URL(request.url())
@@ -39,12 +49,26 @@ test('desktop batch preview, explicit ingestion, repeat receipts and Phase 3 upl
   await expect(page.locator('.capture-preview-list')).toContainText('已接收')
   await expect(page.getByRole('button', { name: '确认接收到生词箱', exact: true })).toBeDisabled()
   await page.getByRole('button', { name: '编辑 Prüfwort', exact: true }).click()
-  const editor = page.getByRole('dialog'); await editor.getByLabel('释义 1', { exact: true }).fill('接收后手动修改')
+  const editor = page.getByRole('dialog'); await editor.getByLabel(structured ? '中文释义 1' : '释义 1', { exact: true }).fill('接收后手动修改')
+  if (integrated) {
+    await expect(editor.getByText(/遇到的词形：Prüfwörter/)).toBeVisible()
+    await editor.getByRole('textbox', { name: '原句译文 1', exact: true }).fill('接收后人工编辑句译')
+  }
   await editor.getByRole('button', { name: '保存修改', exact: true }).click(); await expect(editor).not.toBeVisible()
   await page.goto('./#/settings'); await page.getByRole('button', { name: '立即同步', exact: true }).click(); await expect(page.locator('.sync-status')).toContainText('已同步')
   const snapshot = JSON.parse(fake.text!).snapshot
   expect(snapshot.vocabularies).toHaveLength(1); expect(snapshot.captures).toHaveLength(1)
   expect(snapshot.vocabularies[0]).toMatchObject({ status: 'inbox', meanings: ['接收后手动修改'], de: { article: 'das', plural: 'Prüfwörter' } })
+  if (structured) {
+    expect(snapshot.vocabularies[0].lexicon.senses[0]).toMatchObject({ id: batch.events[0].payload.lexicon!.senses[0].id, chinese: '接收后手动修改', partOfSpeech: 'noun' })
+    expect(snapshot.captures[0].payload.lexicon).toEqual(batch.events[0].payload.lexicon)
+    expect(JSON.parse(fake.text!).protocolVersion).toBe(2)
+  }
+  if (integrated) {
+    expect(snapshot.vocabularies[0]).toMatchObject({ encounteredForm: 'Prüfwörter', lemmaResolution: batch.events[0].payload.lemmaResolution, contexts: [{ id: batch.events[0].payload.contexts![0].id, text: 'Ein künstliches Prüfwort.', translation: '接收后人工编辑句译', translationLanguage: 'zh-CN', translationSource: { provider: 'manual', modified: true } }] })
+    expect(snapshot.captures[0].payload.contexts).toEqual(batch.events[0].payload.contexts)
+    expect(snapshot.captures[0].payload.encounteredForm).toBe('Prüfwörter')
+  }
   expect(snapshot.cards).toHaveLength(0); expect(snapshot.reviewEvents).toHaveLength(0)
   expect(snapshot.ingestedCaptureIds).toContain(id)
 })

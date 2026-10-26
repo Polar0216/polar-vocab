@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { captureEventSchema } from '../../src/domain/vocabulary'
+import { captureEventSchema, payloadRequiresProtocol2 } from '../../src/domain/vocabulary'
 import { uuidSchema } from '../../src/domain/common'
 import { canonicalJson } from '../../src/storage/capture'
 
@@ -7,13 +7,14 @@ export const MAX_BATCH_BYTES = 200_000
 export const MAX_BATCH_EVENTS = 50
 export const captureBatchSchema = z.strictObject({
   format: z.literal('polar-vocab-capture-batch'),
-  protocolVersion: z.literal(1),
+  protocolVersion: z.union([z.literal(1), z.literal(2)]),
   schemaVersion: z.literal(1),
   id: uuidSchema,
   deviceId: uuidSchema,
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
   events: z.array(captureEventSchema).min(1).max(MAX_BATCH_EVENTS),
 }).superRefine((batch, context) => {
+  if (batch.protocolVersion === 1 && batch.events.some(event => payloadRequiresProtocol2(event.payload))) context.addIssue({ code: 'custom', path: ['protocolVersion'], message: '结构化义项、原型和原句译文需要采集协议2。' })
   const ids = new Set<string>()
   for (const [index, event] of batch.events.entries()) {
     if (ids.has(event.id) || event.deviceId !== batch.deviceId || event.origin !== 'windows' || !event.capturedAt.startsWith(batch.month + '-')) {

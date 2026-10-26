@@ -1,10 +1,16 @@
 import { z } from 'zod';
+import { fieldSourceSchema, lemmaCandidateSchema, lexiconSchema, type Lexicon } from './lexicon';
 import { nonBlankText, originSchema, recordFields, schemaVersionSchema, utcDateTimeSchema, uuidSchema, validateRevision } from './common';
 
 export const contextSchema = z.strictObject({
   id: uuidSchema,
   text: nonBlankText(20_000),
   source: nonBlankText(2_000).optional(),
+  translation: nonBlankText(20_000).optional(),
+  translationLanguage: z.literal('zh-CN').optional(),
+  translationSource: fieldSourceSchema.optional(),
+}).superRefine((value, context) => {
+  if (value.translation && (!value.translationLanguage || !value.translationSource)) context.addIssue({ code: 'custom', path: ['translation'], message: '原句译文必须标注语言和来源。' });
 });
 
 const uniqueContexts = z.array(contextSchema).superRefine((contexts, validation) => {
@@ -49,6 +55,9 @@ export const germanFieldsSchema = z.strictObject({
 
 const vocabularyFields = {
   lemma: nonBlankText(500),
+  encounteredForm: nonBlankText(500).optional(),
+  lemmaResolution: lemmaCandidateSchema.optional(),
+  lexicon: lexiconSchema.optional(),
   meanings: z.array(nonBlankText(4_000)).optional(),
   partOfSpeech: nonBlankText(100).optional(),
   source: nonBlankText(2_000).optional(),
@@ -56,10 +65,17 @@ const vocabularyFields = {
   tags: z.array(nonBlankText(80)).max(100).optional(),
 };
 
+function validateProjection(value: { lemma: string; encounteredForm?: string; lemmaResolution?: z.infer<typeof lemmaCandidateSchema>; lexicon?: Lexicon; meanings?: string[] }, context: z.RefinementCtx) {
+  if (value.lemmaResolution && (!value.encounteredForm || value.lemmaResolution.lemma !== value.lemma)) context.addIssue({ code: 'custom', path: ['lemmaResolution'], message: '原型选择必须对应当前词条并保留原始词形。' })
+  if (!value.lexicon) return
+  const meanings = value.lexicon.senses.flatMap(sense => sense.chinese?.trim() ? [sense.chinese.trim()] : [])
+  if (JSON.stringify(meanings) !== JSON.stringify(value.meanings ?? [])) context.addIssue({ code: 'custom', path: ['meanings'], message: '复习释义必须与结构化中文义项一致。' })
+}
+
 export const vocabularyPayloadSchema = z.discriminatedUnion('lang', [
   z.strictObject({ ...vocabularyFields, lang: z.literal('en'), en: englishFieldsSchema.optional() }),
   z.strictObject({ ...vocabularyFields, lang: z.literal('de'), de: germanFieldsSchema.optional() }),
-]);
+]).superRefine(validateProjection);
 
 const lifecycleFields = {
   ...recordFields,
@@ -70,7 +86,7 @@ const lifecycleFields = {
 export const vocabularyEntrySchema = z.discriminatedUnion('lang', [
   z.strictObject({ ...lifecycleFields, ...vocabularyFields, lang: z.literal('en'), en: englishFieldsSchema.optional() }),
   z.strictObject({ ...lifecycleFields, ...vocabularyFields, lang: z.literal('de'), de: germanFieldsSchema.optional() }),
-]).superRefine(validateRevision);
+]).superRefine(validateRevision).superRefine(validateProjection);
 
 export const captureEventSchema = z.strictObject({
   id: uuidSchema,
@@ -88,3 +104,8 @@ export type GermanConjugation = z.infer<typeof germanConjugationSchema>;
 export type VocabularyPayload = z.infer<typeof vocabularyPayloadSchema>;
 export type VocabularyEntry = z.infer<typeof vocabularyEntrySchema>;
 export type CaptureEvent = Readonly<z.infer<typeof captureEventSchema>>;
+
+/** New optional data must never be disguised inside a legacy wire envelope. */
+export function payloadRequiresProtocol2(payload: VocabularyPayload): boolean {
+  return payload.lexicon !== undefined || payload.encounteredForm !== undefined || payload.lemmaResolution !== undefined || Boolean(payload.contexts?.some(context => context.translation !== undefined || context.translationLanguage !== undefined || context.translationSource !== undefined));
+}

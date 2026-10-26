@@ -45,3 +45,14 @@ Web 先取得分支提交的 tree SHA，再递归 Git Trees；`truncated=true` �
 本阶段不删除、归档或重命名任何已上传批次；接收状态依靠既有回执。自动测试与真实资料分目录，私库旧词条/卡片/事件/冲突/决议保持。未来 iOS PWA 继续共用事件模型，若扩展允许的批次 origin 或协议字段，须显式版本化并测试旧客户端拒绝，不能裁剪未知字段。
 
 可执行验证：`tests/unit/capture/protocol.test.ts`、`apps/desktop/tests/queue.test.ts`、`tests/e2e/capture.spec.ts`。HTTP故障与幂等用模拟服务器形状；真实私库端到端结果单列在 [Phase 4 报告](../reports/phase-4/PHASE4_REPORT.md)。
+
+
+## 0.5.0 扩展与协议2
+
+前述v1仍完整支持。新客户端允许protocolVersion=1或2；schemaVersion仍为1。没有lexicon的旧事件按原样保存，不能在读取时给旧CaptureEvent补字段，否则会改变不可变事件正文。
+
+携带payload.lexicon的批次必须使用protocolVersion=2；把扩展伪装成v1会被拒绝。冻结新批次时按事件是否含lexicon选择版本；重试旧批次不重算或换版本。路径、设备、月份、200KB/50事件上限、Contents新建保护、精确ACK和既有UUIDv5派生全部保留。
+
+Web0.5.0可读两种格式，摄取后完整保留lexicon，重复读取同事件不覆盖用户编辑。主快照若含任一结构化词条/采集事件则编码为protocolVersion=2，否则保持1。新客户端拒绝扩展藏在v1 envelope中；旧客户端拒绝2，因此不能混用旧Web同步端。升级前备份，先升级全部Web端并验证Service Worker生效，再授权上传结构化批次；本轮没有执行该远端部署。
+
+SQLite物理表无需迁移，但0.4.x解析器不认识新JSON字段。不要用旧版打开0.5.0已采集结构化事件的目录；提供独立0.5.0测试启动入口，旧队列不改写。JSON全量备份保留来源与义项ID，CSV不是完整词典交换格式。

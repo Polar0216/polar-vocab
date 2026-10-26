@@ -1,6 +1,6 @@
-# 系统架构与模块职责（Phase 4）
+# 系统架构与模块职责（Capture 0.6.0）
 
-基于原有本地词库、FSRS 和 Phase 3 私库同步，Phase 4 新增独立 Windows 收词器。Phase 3.5 已有部署与主要桌面双端验收，iPhone同步、真实401及正常跨版本更新仍未验证。用户另行授权 Phase 4；当前验收状态以 [Phase 4 报告](../reports/phase-4/PHASE4_REPORT.md) 为准。原始 [PROJECT_PLAN](PROJECT_PLAN.md) 及 reference 原件保留。
+基于现有本地词库、FSRS 和 GitHub 私库同步增量开发，0.6.0 统一 Windows 划词、英德词典、结构化义项、整句翻译、句中选词、稳定目录迁移及 Windows 安全授权。没有重写项目或新增云端存储，FSRS 算法与原事件身份保持。当前验收和发布状态见 [整合报告](../reports/integrated/INTEGRATED_RELEASE_REPORT.md)；旧阶段未验证的 iPhone 同步、真实401及正常跨版本更新，不因本轮模拟测试变为通过。原始 [PROJECT_PLAN](PROJECT_PLAN.md) 及 reference 原件保留。
 
 ## 数据流
 
@@ -68,7 +68,7 @@ Dexie v3 保留 v1 的 11 表及 v2 的 devicePreferences、ingestedCaptures，�
 
 ## 凭证、缓存与性能
 
-Token 是 GitHubClient 私有内存字段，不进入任何表、URL、日志、备份或构建配置。只允许固定 api.github.com HTTPS、禁重定向和浏览器自动附带凭证、cache:no-store；断开/401/恢复后清理授权。每轮重验私有目标，404 复核仓库/分支/Contents 权限后才判断文件缺失，已确认的文件消失拒绝自动重建。
+Web Token 是 GitHubClient 私有内存字段，不进入任何表、URL、日志、备份或构建配置。桌面 0.6.0 选择记住设备时，由 Windows 凭证管理器保存目标绑定记录，渲染器不接触 PAT；其生命周期见下文。只允许固定 api.github.com HTTPS、禁重定向和浏览器自动附带凭证、cache:no-store；断开/401/恢复后清理授权。每轮重验私有目标，404 复核仓库/分支/Contents 权限后才判断文件缺失，已确认的文件消失拒绝自动重建。
 
 GitHub ETag 只减少无变化下载，PUT 仍使用本轮 GET 的 blob SHA。相同 SHA 的已校验快照有小型内存缓存；网络适配、合并、决议随设置页按需加载，FSRS 仅创建/评分/完整性核验时加载。Dexie 独立 vendor chunk 便于缓存，没有提高构建阈值。
 
@@ -82,9 +82,12 @@ Workbox 仅预缓存静态构建分块，不缓存 GitHub API 或词库；base�
 
 ```mermaid
 flowchart LR
- Selection[用户快捷键] --> Helper[按需 UIA / 受保护复制回退]
+ Selection[用户快捷键] --> Flow[CaptureFlow 最新请求所有权]
+ Flow --> Feedback[非激活反馈窗口]
+ Flow --> Helper[异步 UIA / 受保护复制回退]
  Helper --> Window[本地 React 窗口]
- Window --> Provider[MyMemory 仅查询原文]
+ Window --> Dictionary[WiktApi 词典与明确词形关系]
+ Window --> Translation[MyMemory 独立义项 / 整句翻译]
  Window --> Queue[(SQLite 事件 / 冻结批次)]
  Queue --> CaptureAPI[共享 CaptureRepository]
  CaptureAPI --> Batches[(私库 captures/)]
@@ -97,10 +100,40 @@ flowchart LR
 
 `packages/shared/` 重导出既有 CaptureEvent、VocabularyPayload、schema、canonicalJson 和固定 UUIDv5，并定义采集批次 envelope；没有第二套领域模型，不依赖 Electron。
 
-`apps/desktop/src/main.ts` 管理本机协议、托盘、单实例、快捷键、IPC 和退出；`preload.ts` 只暴露具名操作。渲染器启用 sandbox/contextIsolation，关闭 Node，只加载本机 `polar://capture/` 资产，CSP 禁止联网与远程脚本。`native/SelectionHelper.cs` 按需运行，无常驻输入/剪贴板监听，不读取密码字段，选词不作为 shell 参数。
+`apps/desktop/src/main.ts` 管理本机协议、托盘、单实例、快捷键、IPC 和退出；`preload.ts` 只暴露具名操作。渲染器启用 sandbox/contextIsolation，关闭 Node，只加载本机 `polar://capture/` 资产，CSP 禁止联网与远程脚本。0.4.1的`capture-flow.ts`管理最新请求及取消，`selection.ts`管理隐藏的预热原生broker；`feedback-preload.ts`只允许反馈消息及渲染回执。`native/SelectionHelper.cs`仅在明确请求时读取选区，无输入/剪贴板监听，不读取密码字段，选词不作为shell参数；非激活反馈与原生读取并行，结果确认后才打开主表单。`performance.ts` 限定固定类别及耗时，不接收词文或凭证；快捷键阶段和查询阶段写入独立 JSONL，网络词典/翻译完成时间不能冒充窗口可见时间。本轮原生跨应用快捷键计时未完成，旧性能证据仍见候选修复报告。
 
 `queue.ts` 是 SQLite outbox，不含卡片、ReviewEvent 或 FSRS；事务保证本地保存及冻结批次精确 ACK。`uploader.ts` 使用现有 GitHubClient 的私有目标检查、内存凭证与固定错误分类，只调用 captures 能力，不调用主快照写入。
 
 `src/integrations/github/captures.ts` 负责完整树扫描预算、创建时不带 sha 的不可变上传、同内容重试及冲突拒绝。Web `CaptureInboxPanel` 绑定连接代次，确认后调用唯一词库服务。原事件、回执、词条及 pending 在既有事务中提交；相似词只提示，不替换人工释义。详见 [CAPTURE_PROTOCOL](CAPTURE_PROTOCOL.md)。
 
 Electron/builder 是根开发依赖。Web 与 Desktop 分别构建；Pages 不下载 Electron 二进制、不运行原生打包。Windows 输出到 `artifacts/desktop/`，自动输出与真实验收配置分开，回归不清理 Phase 3.5 资料。
+
+
+## Phase 4.1 词典与结构化义项边界
+
+桌面主进程的 dictionary.ts 定义 DictionaryProvider、WiktApiProvider、DictionaryLookup；translation.ts 继续独立处理 MyMemory。网络只在主进程发起，IPC按请求ID传递词典进度与最终结果，renderer不得直接访问网络或文件。词典先展示，逐义项中文异步补充，失败保留编辑；来源、查询代次、手动修改和删除ID参与结果归并，保存停止未完成查询。
+
+src/domain/lexicon.ts 是严格结构化模型；packages/shared/lexicon.ts 提供编辑与稳定ID归并工具；SenseEditor.tsx / SenseDetails.tsx 供桌面和Web复用。现有Queue只保存扩展后的事件JSON，无新数据库或新云服务。Web采集预览、词库和编辑器保留完整义项与来源。三方合并将lexicon作为原子字段，冲突沿用人工决议，独立标签可合并；meanings由选定义项重新投影。FSRS代码未改动。
+
+协议2用于携带扩展字段，旧事件/旧冻结批次保持字节及身份，不原地迁移。0.5.0 阶段当时未更新公开网站的限制属于历史；0.6.0 仍要求先部署兼容 Web，再在线核对后上传，实际状态以整合报告为准。研究与调用限制见 [DICTIONARY_PROVIDERS](DICTIONARY_PROVIDERS.md)。
+
+
+## 0.6.0 统一窗口与生命周期
+
+| 模块 | 职责和边界 |
+| --- | --- |
+| `text-analysis.ts` | 可覆盖的单词/短语/句子分类、Unicode 分词和保留原文偏移，不推断词性 |
+| `sentence.ts` / `SentencePane.tsx` | 分段、有限并行、取消与部分失败状态；原文点词、中文手改和明确保留，不阻塞划词反馈 |
+| `morphology.ts` / `dictionary.ts` | 仅从词典明确 `form_of` / `alt_of` 关系返回原型候选，保留来源和歧义；不做词尾猜测 |
+| `authorization.ts` / `credentials.ts` | 主进程授权代次、只读预检、记住确认、恢复及错误分类，不向 React 返回凭证 |
+| `native/CredentialHelper.cs` | 原生密码输入和当前用户 Windows Credential Manager，经管道与主进程交互，无明文文件回退 |
+| `migration.ts` / `queue-storage.ts` | 只读检查、含 WAL 的在线备份、副本版本升级、发布日志与恢复，不原地修改旧库 |
+| `web-compatibility.ts` | 对固定正式站公开元数据做无凭证在线检查，未证明支持协议1/2及上下文扩展时阻止所有上传入口 |
+
+主进程先准备队列，再创建主窗口；网络恢复在窗口可用后异步执行。正式队列目录固定为 `%APPDATA%\Polar Vocab\Capture`，SQLite 及固定分类日志位于其中；Chromium `userData` 使用同级 `Capture.runtime`，避免提前写缓存干扰队列迁移。队列物理版本2与采集/快照协议版本、schemaVersion各自独立。
+
+0.6.0 将 `lemma / encounteredForm / lemmaResolution` 作为关联身份组，含译文的 contexts 作为整体三方处理，义项仍整体保留；不得拼出原词形、原型及词典证明互不对应的词条。Web 编辑器和冲突决议保留这些字段，原有 FSRS 历史与摄取 UUIDv5 不改写。
+
+已完成的正式目录迁入来自明确选定的旧0.5.0人工候选空队列（0事件、0批次）：保留设备身份/设置、旧源、在线备份及迁移证据，副本升级v1→v2。旧默认目录没有数据库，因此不能称为自动发现并迁入未知历史数据，也没有合并所有验收目录。实际迁移和回滚细节见 [INTEGRATED_MIGRATION](INTEGRATED_MIGRATION.md)。
+
+本轮 Web 全回归37通过/3跳过，Desktop 6通过/2跳过；真实公开 Provider 另行验证，GitHub 回归采用人工 HTTP。Windows 原生快捷键计时、真实私库全链路、正式部署结果各有独立状态，不能互相代替。完整证据以整合报告为准。

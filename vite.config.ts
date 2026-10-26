@@ -19,6 +19,7 @@ export default defineConfig(({ command, mode, isPreview }) => {
     plugins: [
       react(),
       tailwindcss(),
+      { name: 'release-capabilities', apply: 'build', generateBundle() { this.emitFile({ type: 'asset', fileName: 'release.json', source: JSON.stringify({ format: 'polar-vocab-web-release', version: '0.6.0', captureProtocols: [1, 2], stateProtocols: [1, 2], features: ['structured-senses', 'context-morphology'] }) }) } },
       { name: 'static-content-security', apply: 'build', transformIndexHtml: () => [{ tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.github.com; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'" }, injectTo: 'head-prepend' }] },
       VitePWA({
         registerType: 'prompt',

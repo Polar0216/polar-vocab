@@ -22,6 +22,12 @@ for (const [, asset] of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
   await readFile(resolve(root, asset.slice(base.length)))
 }
 const sw = await readFile(resolve(root, 'sw.js'), 'utf8')
+const release = JSON.parse(await readFile(resolve(root, 'release.json'), 'utf8'))
+assert.equal(release.format, 'polar-vocab-web-release')
+assert.deepEqual(release.captureProtocols, [1, 2])
+assert.deepEqual(release.stateProtocols, [1, 2])
+assert.ok(release.features.includes('context-morphology'), 'Missing integrated receiver capability')
+assert.ok(!sw.includes('release.json'), 'Compatibility check must use the current network release metadata')
 assert.ok(sw.includes('index.html'), 'Missing offline shell')
 assert.ok(sw.includes('SKIP_WAITING'), 'Missing explicit update handshake')
 assert.ok(!sw.includes('api.github.com'), 'SW must not cache GitHub API')

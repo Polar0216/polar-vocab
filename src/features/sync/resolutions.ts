@@ -1,3 +1,5 @@
+import { senseMeanings } from '../../../packages/shared/lexicon'
+import type { Lexicon } from '../../domain/lexicon'
 import { flashcardSchema, reviewResolutionSchema, tombstoneSchema, vocabularyEntrySchema, appSettingsSchema, type SyncConflict } from '../../domain'
 import type { LocalVocabularyService } from '../vocabulary/service'
 import { canonicalJson } from '../../storage/capture'
@@ -57,6 +59,7 @@ export async function resolveConflict(service: LocalVocabularyService, id: strin
           const key = keys.at(-1)!; if (source[key] === undefined) delete destination[key]; else destination[key] = source[key]
         }
       } else Object.assign(chosen, candidate)
+      if (conflict.entityType === 'vocabulary' && chosen.lexicon) { chosen.meanings = senseMeanings(chosen.lexicon as Lexicon); delete chosen.partOfSpeech }
       const next = { ...chosen, revisionId: crypto.randomUUID(), parentRevisionIds: [...new Set(parents)], updatedAt: now }
       if (conflict.entityType === 'vocabulary') { const parsed = vocabularyEntrySchema.parse(next); await db.vocabularies.put(parsed); await service.appendPending('upsert-vocabulary', parsed) }
       else if (conflict.entityType === 'settings') { const parsed = appSettingsSchema.parse(next); await db.settings.put(parsed); await service.appendPending('update-settings', parsed) }

@@ -69,7 +69,10 @@ function fillEmptyFields(existing: VocabularyPayload, incoming: VocabularyPayloa
     }
     return result
   }
-  return parse(vocabularyPayloadSchema, merge(existing, incoming))
+  const result = merge(existing, incoming)
+  // A flat CSV row has no sense identity/provenance and cannot supplement senses.
+  if (existing.lexicon) { result.lexicon = existing.lexicon; result.meanings = existing.meanings; result.partOfSpeech = existing.partOfSpeech }
+  return parse(vocabularyPayloadSchema, result)
 }
 
 /** All business writes and their outbox records share a single IndexedDB transaction. */
@@ -180,6 +183,7 @@ export class LocalVocabularyService {
   }
 
   private revisedEntry(existing: VocabularyEntry, payload: VocabularyPayload, status = existing.status): VocabularyEntry {
+    if (existing.lexicon && !payload.lexicon) throw new LocalVocabularyError('invalid-data', '结构化义项不能通过旧编辑方式移除，请使用义项编辑器。')
     return parse(vocabularyEntrySchema, {
       ...payload, id: existing.id, schemaVersion: 1, revisionId: crypto.randomUUID(), parentRevisionIds: [existing.revisionId],
       origin: existing.origin, status, createdAt: existing.createdAt, updatedAt: new Date().toISOString(),

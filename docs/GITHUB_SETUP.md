@@ -1,12 +1,16 @@
 # GitHub 私有词库设置
 
-## Phase 4 Windows 采集连接
+## 0.6.0 Windows 采集连接
 
-先阅读 [Windows 使用说明](WINDOWS_CAPTURE.md) 与 [采集协议](CAPTURE_PROTOCOL.md)。本阶段只用 `Polar0216/polar-vocab-data-test` / `main` 人工数据，不初始化或清空已有主快照，不删除旧词条、卡片、评分、冲突、决议及批次。
+先阅读 [Windows 使用说明](WINDOWS_CAPTURE.md)、[安全授权](INTEGRATED_AUTH.md) 与 [采集协议](CAPTURE_PROTOCOL.md)。本轮只用 `Polar0216/polar-vocab-data-test / main` 人工数据，不初始化或清空已有主快照，不删除旧词条、卡片、评分、冲突、决议及批次。
 
-使用仍有效、权限符合要求的有限期 Fine-grained PAT；已有凭证符合时无需新建：Resource owner=Polar0216，Only select repositories 仅选该私库，Contents=Read and write，Metadata默认只读，不加其他权限。不要发到聊天、文件、截图或日志。桌面设置中本人输入凭证，测试连接（只读），核对目标后明确确认。凭证只在当前进程内存保存，退出后重新输入，没有记住设备功能。本轮真实私库实测已由用户暂缓，以下为以后主动恢复时的操作说明。
+使用仍有效、权限符合要求的有限期 Fine-grained PAT；已有凭证符合时无需新建：Resource owner=Polar0216，Only select repositories仅选该私库，Contents=Read and write，Metadata默认只读，不加其他权限。不得发送到聊天、项目、截图或日志，不复用以前贴到聊天中的凭证。
 
-桌面手动/显式自动同步只创建 `captures/{deviceId}/{YYYY-MM}/{batchId}.json`，不写 `data/state.json`。正式站已部署Phase4接收入口：在生词箱检查、预览、确认接收，再由原Web同步引擎保存正式词库。线上基础页面检查通过，真实私库全链路仍未验证。首次Phase4公开push已获用户授权并普通推送，Actions及Pages成功；未创建Release或上传exe。
+桌面设置填写owner/repo/branch，点击「输入凭证并测试（系统窗口）」，在出现的本应用原生密码框本人输入PAT。只读预检后核对目标，再明确确认；可勾选「记住此设备（Windows凭证管理器）」，下次启动异步复验并恢复。未勾选只在本次主进程内存使用。网络暂不可用不会删除已保存凭证，已保存授权401才失效；断开并忘记后不再恢复，队列保留。Web下方的首次连接流程仍是浏览器内存授权，两者不同。
+
+桌面上传前还会在线核对正式站release.json支持协议1/2和当前上下文字段。未确认则暂停上传，不影响离线收藏；先完成兼容Web部署和行为验证，不能用旧接收器接收新扩展。桌面只创建 `captures/{deviceId}/{YYYY-MM}/{batchId}.json`，不写 `data/state.json`。Web生词箱检查、预览并确认接收后，仍由原同步引擎写正式词库。
+
+0.5.0阶段曾禁止向当时旧Web上传；那是旧版本边界。本轮0.6.0已授权普通代码推送及Pages部署，实际发布和真实私库链路结果见[整合报告](../reports/integrated/INTEGRATED_RELEASE_REPORT.md)。授权、安全存储、模拟GitHub、真实私库分别验收，不能从连接成功推定上传、去重或重启恢复全部通过。未创建Release或自动上传exe。
 
 下文保留Phase3/3.5主同步操作与历史状态，未测iPhone/401/SW项目不自动升级为通过。
 
@@ -32,11 +36,11 @@
 3. Resource owner 选数据仓库的所有者。
 4. Repository access 选 **Only select repositories**，仅选择刚才的数据仓库。
 5. Repository permissions 中 **Contents → Read and write**。GitHub 自动要求的 Metadata 只读保留，不额外授予 Workflows、Actions、Administration 或账户权限。
-6. Generate token，立即在可信设备的网站设置中输入。组织可能要求审批，未审批的凭证不能访问私有内容。离开生成页面后通常无法再次查看完整值，丢失时重新生成，不在聊天中索取。
+6. Generate token，立即在可信设备的网站设置中输入。组织可能要求审批，未审批的凭证不能访问私有内容。离开生成页面后通常无法再次查看完整值，丢失时重新生成，不在聊天中索取。桌面请在原生授权窗口输入，Web请在可信正式网站输入。
 
 参考：[GitHub 官方 PAT 操作说明](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)。只读测试不能证明写入权限，实际首次确认提交才会验证 Contents 写权限及分支规则。
 
-## 3. 首次连接
+## 3. Web 首次连接
 
 1. 打开可信 Polar Vocab 站点，先在设置导出完整 JSON，确认备份已保存到自己的私人位置。
 2. 「GitHub 私有同步」输入所有者 `Polar0216`、仓库 `polar-vocab-data-test`、PAT；分支可留空使用默认分支，或填写已有分支名称。
@@ -47,13 +51,13 @@
 
 初始 A/B：云端没有 state.json，仓库/分支/读取权限已确认，再初始化。C：本机空、云端有数据，验证后导入。D：两边都有数据，公共基线或保守新增合并，不能证明安全时进入冲突。E：协议不兼容，不覆盖、不清空。
 
-## 4. 第二台设备与日常使用
+## 4. Web 第二台设备与日常使用
 
 第二台设备打开同一版本网站，用自己的 PAT 连接同一个 owner/repo/branch。检查预览并确认后会下载完整词条和历史，本机设备身份及默认录入语言不被其他设备替换。
 
 默认手动同步。可打开自动同步：本机操作先成批等待，至少一分钟间隔，前台/联网/结束学习触发，失败有限退避；每次评分不会单独产生一次 commit。关闭网页不保证最终上传，请离开设备前手动同步并核对状态。
 
-PAT 只在当前页面运行内存中。刷新、关闭页面或重启浏览器后重新输入；连接目标可以保留，但「需要重新授权」不等于数据丢失。断开连接会清理内存授权及连接，保留词库与 pending；若不再使用凭证，也在 GitHub Token 页面撤销。
+Web PAT只在当前页面运行内存中。刷新、关闭页面或重启浏览器后重新输入；连接目标可以保留，但「需要重新授权」不等于数据丢失。断开连接会清理内存授权及连接，保留词库与 pending；若不再使用凭证，也在 GitHub Token 页面撤销。
 
 本次用户曾在聊天主动提供两枚测试凭证，并随后明确授权临时测试使用；凭证未写入项目、备份或公开产物，验收结束后需由用户撤销。日常仍只在正式网页输入，不在聊天发送。这次授权恢复连接不等于真实401测试通过；真实401已按用户选择保留未验证。
 

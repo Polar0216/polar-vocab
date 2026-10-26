@@ -4,12 +4,15 @@
 
 | 位置 | 内容 | 是否提交 |
 | --- | --- | --- |
+| [integrated/INTEGRATED_RELEASE_REPORT.md](integrated/INTEGRATED_RELEASE_REPORT.md) | 0.6.0整合版、迁移、授权、词形/句译及实际发布边界 | 是 |
 | [phase-0/PHASE0_REPORT.md](phase-0/PHASE0_REPORT.md) | Phase 0 实施、测试结果、未验证项目与风险 | 是 |
 | [phase-1/PHASE1_REPORT.md](phase-1/PHASE1_REPORT.md) | Phase 1 本地词库、导入、备份与浏览器验收 | 是 |
 | [phase-2/PHASE2_REPORT.md](phase-2/PHASE2_REPORT.md) | Phase 2 FSRS、卡片、学习任务与数据一致性验收 | 是 |
 | [phase-3/PHASE3_REPORT.md](phase-3/PHASE3_REPORT.md) | Phase 3 私有同步、多端模拟与安全验收 | 是 |
 | [phase-3.5/PHASE3_5_REPORT.md](phase-3.5/PHASE3_5_REPORT.md) | Phase 3.5 首次推送、正式站与逐项真实验收状态 | 是 |
 | [phase-4/PHASE4_REPORT.md](phase-4/PHASE4_REPORT.md) | Phase 4 Windows收词、共享批次、Web接收与未验证项 | 是 |
+| [phase-4.1/PHASE4_1_REPORT.md](phase-4.1/PHASE4_1_REPORT.md) | Capture0.5.0英德词典、结构化义项与兼容验收 | 是 |
+| [phase-4/HOTKEY_PERFORMANCE_FIX_2026-10-26.md](phase-4/HOTKEY_PERFORMANCE_FIX_2026-10-26.md) | 0.4.1快捷键修复候选、旧版计时、回归及未完成的真实跨应用性能验收 | 是 |
 | `test-results/phase-4/` | 本阶段可重建的trace、截图及执行产物；不放真实验收备份或控制脚本 | 否，自动生成 |
 | `playwright-report/` | 可查看的HTML浏览器测试报告 | 否，自动生成 |
 | 工程根目录 `.cache/phase3.5-real-sync/` | 实时验收恢复后重新导出的本机备份，位于E2E输出清理范围之外 | 否，仅留本机，不发布 |

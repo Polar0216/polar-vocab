@@ -1,0 +1,8 @@
+import type { GermanFields, Lexicon } from '../../../packages/shared'
+
+export function GermanFieldsEditor({ value, lexicon, disabled, onChange }: { value: GermanFields; lexicon: Lexicon; disabled: boolean; onChange: <K extends keyof GermanFields>(field: K, next: GermanFields[K]) => void }) {
+  return <fieldset disabled={disabled}><legend>德语词形（选填，仅采用明确数据；可修改）</legend><div className="row"><label>冠词<select aria-label="德语冠词" value={value.article ?? ''} onChange={event => onChange('article', (event.target.value || undefined) as GermanFields['article'])}><option value="">未填写</option>{['der', 'die', 'das'].map(item => <option key={item}>{item}</option>)}</select></label><label className="grow">复数<input aria-label="德语复数" maxLength={500} value={value.plural ?? ''} onChange={event => onChange('plural', event.target.value)} /></label></div>
+    {([['infinitive', '不定式'], ['past', '过去式'], ['participleII', '第二分词']] as const).map(([field, label]) => <label key={field}>{label}<input aria-label={label} maxLength={500} value={value[field] ?? ''} onChange={event => onChange(field, event.target.value)} /></label>)}
+    {value.conjugations?.map((form, index) => <label key={index}>{form.tense} · {form.person}<input aria-label={`变位 ${index + 1}`} maxLength={500} value={form.form} onChange={event => onChange('conjugations', value.conjugations?.map((item, n) => n === index ? { ...item, form: event.target.value } : item))} /></label>)}
+    <p className="hint">{Object.entries(lexicon.fieldSources).filter(([key]) => key.startsWith('de.')).map(([key, source]) => `${key.slice(3)}: ${source.provider}${source.modified ? '（人工修改）' : ''}`).join(' · ')}</p></fieldset>
+}

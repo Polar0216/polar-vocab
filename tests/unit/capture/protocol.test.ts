@@ -22,7 +22,7 @@ describe('shared immutable capture protocol', () => {
   })
   it('rejects future versions, extra fields, mismatched month/device/origin, duplicate IDs and path spoofing', () => {
     const original = batch()
-    for (const value of [{ ...original, protocolVersion: 2 }, { ...original, token: 'not-a-credential' }, { ...original, month: '2026-11' }, { ...original, deviceId: id(905) }, { ...original, events: [capture(), capture()] }, { ...original, events: [{ ...capture(), origin: 'web' }] }]) expect(captureBatchSchema.safeParse(value).success).toBe(false)
+    for (const value of [{ ...original, protocolVersion: 3 }, { ...original, token: 'not-a-credential' }, { ...original, month: '2026-11' }, { ...original, deviceId: id(905) }, { ...original, events: [capture(), capture()] }, { ...original, events: [{ ...capture(), origin: 'web' }] }]) expect(captureBatchSchema.safeParse(value).success).toBe(false)
     expect(() => decodeBatch(encodeBatch(original), `captures/${id(999)}/2026-10/${original.id}.json`)).toThrow()
   })
   it('marks same-spelling vocabulary as a possible duplicate, without rewriting the event', () => {
