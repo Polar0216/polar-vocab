@@ -1,4 +1,3 @@
-"docs/reference/Polar_Vocab\351\241\271\347\233\256\350\247\204\345\210\222\344\271\246.md"
 .env.example
 .gitattributes
 .github/workflows/deploy.yml
@@ -71,6 +70,7 @@ docs/DATA_MODEL.md
 docs/DESKTOP_TROUBLESHOOTING.md
 docs/DEVELOPMENT.md
 docs/DICTIONARY_PROVIDERS.md
+docs/FOLDER_GUIDE.md
 docs/GITHUB_SETUP.md
 docs/INTEGRATED_AUTH.md
 docs/INTEGRATED_MIGRATION.md
@@ -81,6 +81,7 @@ docs/REAL_DEVICE_CHECKLIST.md
 docs/SYNC_DESIGN.md
 docs/SYNC_TROUBLESHOOTING.md
 docs/WINDOWS_CAPTURE.md
+docs/reference/Polar_Vocab项目规划书.md
 docs/reference/README.md
 eslint.config.js
 index.html
@@ -99,6 +100,7 @@ public/pwa-512.png
 public/pwa-maskable-512.png
 reports/README.md
 reports/integrated/AUTH_WINDOW_FIX_0_6_1.md
+reports/integrated/CLEANUP_AND_LIVE_ACCEPTANCE_20261027.md
 reports/integrated/INTEGRATED_RELEASE_REPORT.md
 reports/integrated/RELEASE_FILES.txt
 reports/phase-0/PHASE0_REPORT.md

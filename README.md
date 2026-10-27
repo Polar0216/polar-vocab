@@ -6,7 +6,7 @@
 
 ## Windows 日常使用
 
-日常入口为整合版便携程序 `artifacts/desktop/integrated-0.6.1-final/Polar-Vocab-Capture-0.6.1-win-x64.exe`。最终可执行文件的生成、校验值及实测状态见整合报告。无需隔离启动器：正式数据目录固定为 `%APPDATA%\Polar Vocab\Capture`，SQLite 为 `captures.sqlite`；Chromium 缓存独立放在同级 `Capture.runtime`。具体路径也显示在设置页。
+日常双击桌面“Polar Vocab Capture（正式入口）”，或 `artifacts/desktop/current/Polar-Vocab-Capture-0.6.1-win-x64.exe`。完整背词软件打开[Polar Vocab 网站](https://polar0216.github.io/polar-vocab/)。本机文件分类见[目录指南](docs/FOLDER_GUIDE.md)，最新实测见[整理与真实同步验收](reports/integrated/CLEANUP_AND_LIVE_ACCEPTANCE_20261027.md)。无需隔离启动器：正式数据目录固定为 `%APPDATA%\Polar Vocab\Capture`，SQLite 为 `captures.sqlite`；Chromium 缓存独立放在同级 `Capture.runtime`。具体路径也显示在设置页。
 
 1. 正常退出旧版后双击新版；程序常驻托盘。默认快捷键 Ctrl+Alt+S，若被其他程序占用，可在设置更换，不需要删除旧程序或目录。
 2. 在原应用选中人工文本后按快捷键。非激活反馈先显示，原生读取与词典、翻译异步进行；读取失败仍可手动输入或粘贴。
@@ -69,7 +69,9 @@ Web 通过 GitHub Contents API、SHA 检查、三方合并、持久化上传批�
 | `tests/`、`scripts/` | Web 单元/E2E 测试与开发检查工具 |
 | [docs/](docs/README.md) | 需求、架构、协议、开发与使用说明 |
 | [reports/](reports/README.md) | 分阶段报告，整合报告位于 `reports/integrated/` |
-| `artifacts/desktop/` | 不提交 Git 的各版便携程序，旧版保留 |
+| `artifacts/desktop/current/` | 日常使用的便携程序，不提交 Git |
+| `artifacts/desktop/history/` | 历史版本、旧测试目录与可恢复归档，不提交 Git |
+| `artifacts/desktop/build-output/` | 下次打包的可重建中间产物，不提交 Git |
 | `.cache/`、`reports/test-results/` | 忽略提交的本地证据与独立自动测试输出，不能相互混放 |
 | `node_modules/`、`dist/`、`apps/desktop/build/` | 忽略提交的依赖与构建文件 |
 

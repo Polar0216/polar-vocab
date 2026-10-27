@@ -9,6 +9,7 @@
 | [DATA_MODEL.md](DATA_MODEL.md) | 数据字段、版本和校验规则 |
 | [SYNC_DESIGN.md](SYNC_DESIGN.md) | 私有 GitHub 同步协议、合并与故障恢复 |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | 开发、依赖、测试、构建和部署方法 |
+| [FOLDER_GUIDE.md](FOLDER_GUIDE.md) | 日常入口、源码、文档、报告、历史版本与本机数据的存放位置 |
 | [GITHUB_SETUP.md](GITHUB_SETUP.md) | 普通用户私有仓库与最小权限 PAT 设置 |
 | [SYNC_TROUBLESHOOTING.md](SYNC_TROUBLESHOOTING.md) | 授权、冲突、离线与恢复排查 |
 | [WINDOWS_CAPTURE.md](WINDOWS_CAPTURE.md) | Windows安装、划词、离线队列与采集同步 |

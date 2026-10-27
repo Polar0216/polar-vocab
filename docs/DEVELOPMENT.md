@@ -2,7 +2,9 @@
 
 工程基线 Node 24 LTS / npm 11，实际 Node 24.13.0、npm 11.6.2。使用 npm ci 按精确 package-lock.json 安装，.npmrc 开启 exact 与 engine-strict。0.6.0 沿用现有精确锁文件，没有新增 npm 依赖。后面的 Phase 3.5、Phase 4 和 0.5.0 发布记录属于历史；当前状态见整合发布报告，不将旧验收结论扩展到新版本。
 
-## 0.6.0 整合工程
+## 0.6.1 整合工程
+
+日常程序在 `artifacts/desktop/current/`，历史程序和旧测试目录在 `artifacts/desktop/history/`。默认打包输出改为 `artifacts/desktop/build-output/`，不会把 unpacked 中间文件混进日常入口。实际归档与删除核对见[最新验收记录](../reports/integrated/CLEANUP_AND_LIVE_ACCEPTANCE_20261027.md)。
 
 当前桌面版本见 `apps/desktop/package.json`。日常使用同一个便携 exe 与稳定 `%APPDATA%\Polar Vocab\Capture`，不要求隔离启动器。SQLite、连接目标及设置都在 `captures.sqlite`；日志在 `logs/`，迁移备份在 `migration-backups/`，Chromium runtime 缓存在同级 `Capture.runtime`。后者在迁移目标之外，避免 Electron 提前创建缓存使首次迁移失效。
 
@@ -39,10 +41,12 @@ Remove-Item Env:PLAYWRIGHT_CHANNEL
 ```sh
 npm run desktop:runtime
 npm run desktop:build
-npx --no-install electron-builder --projectDir apps/desktop --config electron-builder.json --win portable --x64 --publish never --config.directories.output=../../artifacts/desktop/integrated-0.6.0
+npx --no-install electron-builder --projectDir apps/desktop --config electron-builder.json --win portable --x64 --publish never --config.directories.output=../../artifacts/desktop/build-output
 ```
 
-此目录必须是本次专用输出；不要重用含需保留资料的目录，builder 可能清理目标。离线已有匹配运行时可另加 `--config.electronDist=../../node_modules/electron/dist`，保留校验和第三方通知。构建脚本编译 `SelectionHelper.exe` 与 `CredentialHelper.exe`，随应用资源打包；仅 Windows 桌面打包需要它们，Pages 不打包原生 exe。
+此目录只放可重建构建输出；不要放数据库、验收备份或历史程序，builder 可能清理目标。有需保留的上次构建时应显式使用新的输出目录。验证后的便携 exe 才放入 `current/`；先将旧日常程序保留到 `history/`，不要覆写运行中的文件。离线已有匹配运行时可另加 `--config.electronDist=../../node_modules/electron/dist`，保留校验和第三方通知。构建脚本编译 `SelectionHelper.exe` 与 `CredentialHelper.exe`，随应用资源打包；仅 Windows 桌面打包需要它们，Pages 不打包原生 exe。
+
+用户忙碌、禁止桌面操作时，不运行会打开原生窗口的 Desktop E2E 和授权提示窗诊断。后台可运行 `npm run test:desktop -- --exclude '**/credential-prompt.test.ts'`；这明确排除3个原生 GUI 项，不能据此声称它们本轮重测通过。Web Playwright 须保持默认 headless，使用独立测试 profile。
 
 公开 Web 构建生成 `release.json`，声明版本、采集/状态协议 1/2 与 `context-morphology`。桌面所有上传入口在核对正式站后才可发送，新网站部署与行为验证之前保持暂停；只读授权检查和本地收藏仍可用。工作流中不设置私人 PAT，不将私库内容写进公开构建。
 

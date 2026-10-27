@@ -2,7 +2,7 @@
   "appId": "com.polarvocab.capture",
   "productName": "Polar Vocab Capture",
   "electronVersion": "44.9.0",
-  "directories": { "output": "../../artifacts/desktop" },
+  "directories": { "output": "../../artifacts/desktop/build-output" },
   "files": ["build/main.cjs", "build/preload.cjs", "build/feedback-preload.cjs", "build/renderer/**", "build/icon.png", "build/THIRD_PARTY_NOTICES.txt", "package.json"],
   "extraResources": [{ "from": "build/native/SelectionHelper.exe", "to": "SelectionHelper.exe" }, { "from": "build/native/CredentialHelper.exe", "to": "CredentialHelper.exe" }],
   "asar": true,
