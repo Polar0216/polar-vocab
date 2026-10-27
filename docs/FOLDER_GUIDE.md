@@ -1,9 +1,19 @@
 # 文件夹与日常入口
 
-背词、整理和复习使用[完整网站](https://polar0216.github.io/polar-vocab/)。Windows划词使用桌面“Polar Vocab Capture（正式入口）”，指向 `artifacts/desktop/current/Polar-Vocab-Capture-0.6.1-win-x64.exe`。关闭窗口是隐藏到托盘，切换版本前从托盘正常退出。
+背词、整理和复习使用[完整网站](https://polar0216.github.io/polar-vocab/)。按用户最新要求，本机整个Git工程收进 `project/`，最外层只保留以下4项；工程内部相对路径、Git历史、依赖和Actions不变：
 
 ```text
 polar-vocab/
+├─ 使用说明.md                 日常操作与全部文件夹说明
+├─ 启动Capture收词.lnk        指向project内当前0.6.1便携版
+├─ 打开背词软件.url            打开正式背词、词库和复习网站
+└─ project/                   完整工程、报告、程序及历史资料
+```
+
+桌面原入口已移到 `project/artifacts/desktop/history/shortcuts/`，没有删除程序。Capture关闭窗口是隐藏到托盘，切换版本前从托盘正常退出。以下为 `project/` **内部**结构，也仍是公开仓库的根结构；远端没有额外套project层：
+
+```text
+project/
 ├─ src/                         Web应用源码
 ├─ apps/desktop/                Windows收词器源码与原生helper
 ├─ packages/shared/             两端共用的模型、协议和义项编辑组件
@@ -22,7 +32,7 @@ polar-vocab/
 └─ .github/workflows/           公开站构建和部署
 ```
 
-工程配置、依赖锁文件和README仍在根目录，方便标准工具直接运行。`node_modules/`、`dist/`、桌面`build/`是可重建开发输出；它们不作为日常程序入口。
+工程配置、依赖锁文件和README都在project内部的工程根目录，开发时先进入project再运行npm命令。没有逐个搬动源码或修改导入路径。`node_modules/`、`dist/`、桌面`build/`是可重建开发输出；它们不作为日常程序入口。历史证据中的旧工程绝对路径统一增加project层查找，原始证据不改写。外层Capture快捷方式目前使用固定目标；再次移动整个外层目录时需更新目标。
 
 正式数据在工程以外：`%APPDATA%/Polar Vocab/Capture/captures.sqlite`，配置及连接目标保存在同一SQLite的metadata，迁移备份与日志也在此数据目录。浏览器运行缓存位于同级 `Capture.runtime/`；记住的凭证在Windows凭证管理器。移动exe不会移动或清空词库。Web的IndexedDB由浏览器profile管理，和桌面SQLite独立。
 

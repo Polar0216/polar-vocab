@@ -6,7 +6,11 @@
 
 ## 日常入口与目录整理
 
-双击桌面“Polar Vocab Capture（正式入口）”，目标为 `artifacts/desktop/current/Polar-Vocab-Capture-0.6.1-win-x64.exe`，无隔离参数。完整背词、整理、复习打开[正式网站](https://polar0216.github.io/polar-vocab/)。当前exe为100607766字节，SHA256 `3d0730e2a535ecbaff1ff09d90fc415e4e54f4ae8aff3fbb32d4607bda1d1229`；整理前后字节一致，没有换成新的未经验证版本。
+当前从外层“启动Capture收词.lnk”打开收词器，从“打开背词软件.url”打开[完整背词网站](https://polar0216.github.io/polar-vocab/)。快捷方式目标为 `project/artifacts/desktop/current/Polar-Vocab-Capture-0.6.1-win-x64.exe`，无隔离参数；原桌面入口已收回。当前exe为100607766字节，SHA256 `3d0730e2a535ecbaff1ff09d90fc415e4e54f4ae8aff3fbb32d4607bda1d1229`；整理前后字节一致，没有换成新的未经验证版本。
+
+**18时后用户追加要求的外层整理结果：**整个仓库（含.git、node_modules、源码、报告、程序和.cache）完整收进外层 `project/`，29个原顶层项目均完整移动；工程内部与远端结构不变。最外层只有project、使用说明.md、启动Capture收词.lnk、打开背词软件.url。新快捷方式目标和空参数已读取核对，网站入口URL已核对；原桌面快捷方式移到history/shortcuts，不在桌面保留。本文其他无前缀路径均相对移动后的工程根目录。
+
+从新路径再次真正启动普通0.6.1 SFX（这次未加调试参数），窗口版本正确、快捷键注册成功，设置显示已自动恢复并验证正式私库授权，未再次输入PAT；数据目录不变，exe SHA仍一致。SFX启动器本身没有窗口，首次工具报告未暴露窗口，重新枚举后实际解压子进程窗口可用，未将此记为软件启动失败。
 
 | 位置 | 当前用途 |
 | --- | --- |
@@ -108,3 +112,11 @@ EN/DE数据由后台生产Provider类取得，再经已运行桌面的save IPC�
 实际暂存索引231个源码/文档文件扫描通过，发布清单与索引一致；不含exe、SQLite、原始快照、profile、日志或识别到的凭证。仓库本地clean filter仍为 `node scripts/public-report-filter.mjs` 且required=true，只对历史phase报告的公开blob脱敏，不改变本机原件。10份相关Markdown的本地链接均有效，CRLF感知的diff空白检查通过。最终再次核对1304项保护文件，无缺失、无哈希变化。
 
 既有正式发布的build/deploy作业均已公开API核对成功，线上HTML、release.json及入口5个JS/CSS资产与本地已测构建一致。此次改动不改变Web代码，报告提交使用 `[skip ci]`，不重复部署相同网站；后续新克隆与普通推送的实际结果继续补记。
+
+本地提交79e908b已完成；原定独立克隆操作一度因自动审批额度用尽未执行，额度恢复后正常重试成功。实际新克隆不含原仓库的本地clean filter配置，源码/索引两次扫描231文件通过，工作区干净，证明公开内容脱敏不依赖重新克隆机器的filter设置。
+
+用户随后允许屏幕验收但本人离开，需要本人完成的操作继续搁置。实际记事本和文件对话框未返回可确认编辑焦点，没有代输或修改其已有文档；Explorer启动访问许可超时，没有绕过。Edge人工测试页已打开，但Windows控制接口随后无法可靠确认浏览器当前URL而强制中止；已停止全部屏幕输入，没有换其他接口绕过，也没有真实热键计时样本。该项继续未验证，不能写成软件取词失败或性能达标。
+
+整体移动后再次核对1304个受保护文件，全部存在且SHA一致；新入口存在、空启动参数、网站URL正确、旧桌面入口不存在，检查结果在 `.cache/outer-folder-20261027/`。只读SQLite仍为3事件/2批次、全部acknowledged、自动上传false；本轮人工文本页后台服务器已停止，测试资料保留。
+
+搬迁后在新的project工程根目录再次运行 `npm run check` 全部通过（Web246测试、TS、Lint、Pages/PWA、安全扫描），无窗口Desktop单元73项再次通过。5份本轮改动Markdown的相对链接无失效。内部相对路径、既有构建资产名与运行时数据目录没有因外层收纳改变。

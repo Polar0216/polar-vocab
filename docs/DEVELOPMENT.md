@@ -4,6 +4,8 @@
 
 ## 0.6.1 整合工程
 
+本机完整仓库现位于外层 `polar-vocab/project/`；先进入含package.json的project工程根目录再运行下列命令。外层只有两个日常入口和使用说明，Git元数据随完整仓库一并移动，工程内部及远端仓库结构不变；不需要更改Actions工作目录。
+
 日常程序在 `artifacts/desktop/current/`，历史程序和旧测试目录在 `artifacts/desktop/history/`。默认打包输出改为 `artifacts/desktop/build-output/`，不会把 unpacked 中间文件混进日常入口。实际归档与删除核对见[最新验收记录](../reports/integrated/CLEANUP_AND_LIVE_ACCEPTANCE_20261027.md)。
 
 当前桌面版本见 `apps/desktop/package.json`。日常使用同一个便携 exe 与稳定 `%APPDATA%\Polar Vocab\Capture`，不要求隔离启动器。SQLite、连接目标及设置都在 `captures.sqlite`；日志在 `logs/`，迁移备份在 `migration-backups/`，Chromium runtime 缓存在同级 `Capture.runtime`。后者在迁移目标之外，避免 Electron 提前创建缓存使首次迁移失效。

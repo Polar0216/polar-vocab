@@ -6,7 +6,7 @@
 
 ## Windows 日常使用
 
-日常双击桌面“Polar Vocab Capture（正式入口）”，或 `artifacts/desktop/current/Polar-Vocab-Capture-0.6.1-win-x64.exe`。完整背词软件打开[Polar Vocab 网站](https://polar0216.github.io/polar-vocab/)。本机文件分类见[目录指南](docs/FOLDER_GUIDE.md)，最新实测见[整理与真实同步验收](reports/integrated/CLEANUP_AND_LIVE_ACCEPTANCE_20261027.md)。无需隔离启动器：正式数据目录固定为 `%APPDATA%\Polar Vocab\Capture`，SQLite 为 `captures.sqlite`；Chromium 缓存独立放在同级 `Capture.runtime`。具体路径也显示在设置页。
+本机已将整个工程收进外层 `polar-vocab/project/`；外层双击“启动Capture收词.lnk”使用收词器，双击“打开背词软件.url”使用[完整背词网站](https://polar0216.github.io/polar-vocab/)，外层“使用说明.md”解释各文件夹。原桌面入口已收回历史目录。直接程序仍位于本工程的 `artifacts/desktop/current/Polar-Vocab-Capture-0.6.1-win-x64.exe`。文件分类见[目录指南](docs/FOLDER_GUIDE.md)，最新实测见[整理与真实同步验收](reports/integrated/CLEANUP_AND_LIVE_ACCEPTANCE_20261027.md)。无需隔离启动器：正式数据目录固定为 `%APPDATA%\Polar Vocab\Capture`，SQLite 为 `captures.sqlite`；Chromium 缓存独立放在同级 `Capture.runtime`。具体路径也显示在设置页。
 
 1. 正常退出旧版后双击新版；程序常驻托盘。默认快捷键 Ctrl+Alt+S，若被其他程序占用，可在设置更换，不需要删除旧程序或目录。
 2. 在原应用选中人工文本后按快捷键。非激活反馈先显示，原生读取与词典、翻译异步进行；读取失败仍可手动输入或粘贴。
