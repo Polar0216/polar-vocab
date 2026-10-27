@@ -111,7 +111,7 @@ EN/DE数据由后台生产Provider类取得，再经已运行桌面的save IPC�
 
 实际暂存索引231个源码/文档文件扫描通过，发布清单与索引一致；不含exe、SQLite、原始快照、profile、日志或识别到的凭证。仓库本地clean filter仍为 `node scripts/public-report-filter.mjs` 且required=true，只对历史phase报告的公开blob脱敏，不改变本机原件。10份相关Markdown的本地链接均有效，CRLF感知的diff空白检查通过。最终再次核对1304项保护文件，无缺失、无哈希变化。
 
-既有正式发布的build/deploy作业均已公开API核对成功，线上HTML、release.json及入口5个JS/CSS资产与本地已测构建一致。此次改动不改变Web代码，报告提交使用 `[skip ci]`，不重复部署相同网站；后续新克隆与普通推送的实际结果继续补记。
+既有正式发布的build/deploy作业均已公开API核对成功，线上HTML、release.json及入口5个JS/CSS资产与本地已测构建一致。此次改动不改变Web代码，报告提交使用 `[skip ci]`，不重复部署相同网站。
 
 本地提交79e908b已完成；原定独立克隆操作一度因自动审批额度用尽未执行，额度恢复后正常重试成功。实际新克隆不含原仓库的本地clean filter配置，源码/索引两次扫描231文件通过，工作区干净，证明公开内容脱敏不依赖重新克隆机器的filter设置。
 
@@ -120,3 +120,5 @@ EN/DE数据由后台生产Provider类取得，再经已运行桌面的save IPC�
 整体移动后再次核对1304个受保护文件，全部存在且SHA一致；新入口存在、空启动参数、网站URL正确、旧桌面入口不存在，检查结果在 `.cache/outer-folder-20261027/`。只读SQLite仍为3事件/2批次、全部acknowledged、自动上传false；本轮人工文本页后台服务器已停止，测试资料保留。
 
 搬迁后在新的project工程根目录再次运行 `npm run check` 全部通过（Web246测试、TS、Lint、Pages/PWA、安全扫描），无窗口Desktop单元73项再次通过。5份本轮改动Markdown的相对链接无失效。内部相对路径、既有构建资产名与运行时数据目录没有因外层收纳改变。
+
+最终目录说明提交 `fe1ea9c58860aef3b1fbf8cbf06f6b057b207755` 已在独立无filter克隆中再次扫描231文件通过。推送前再次核对公开main仍为471bc9f，随后正常 `git push origin main` 从471bc9f快进至fe1ea9c，远端HEAD再次核对相同。没有force、Release、exe上传、重复部署或私库历史操作。外层lnk含本机路径，只留本机、不纳入公开索引；全部学习数据、原始备份和测试profile同样未提交。本段发布回执另用纯文档提交保存。
