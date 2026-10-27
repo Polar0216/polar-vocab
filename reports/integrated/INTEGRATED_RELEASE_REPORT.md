@@ -1,6 +1,6 @@
 # Polar Vocab 0.6.0 整合发布报告
 
-更新日期：2026-10-27。状态：实现及本地回归完成；公开部署待本报告后的实际推送验证；真实私库端到端与本轮 Windows 跨应用热键性能尚未验收。
+更新日期：2026-10-27。状态：实现及本地回归完成；源码已普通推送，Actions及Pages部署成功；真实私库端到端与本轮 Windows 跨应用热键性能尚未验收，不能标记整合验收全部通过。
 
 本报告区分代码实现、真实公共 API、Windows 组件测试、模拟 GitHub，以及真实私库请求。历史报告保持原样；本次结果不追溯修改历史验收结论。
 
@@ -15,7 +15,7 @@
 - 稳定队列目录：`%APPDATA%/Polar Vocab/Capture`，数据库`captures.sqlite`，设置在SQLite metadata。Chromium运行缓存位于旁边`Capture.runtime`，避免浏览器在首次备份迁移前写缓存干扰安全检查。普通exe无需隔离启动器。
 - SQLite user_version=2版本保护、在线一致性备份（包含已提交WAL）、迁移副本验证、发布journal和中断恢复。拒绝原地打开v1、非空目标合并、未知损坏队列重建。备份与旧目录保留，详见[迁移说明](../../docs/INTEGRATED_MIGRATION.md)。
 - Web接收protocolVersion1/2；新上下文译文/原词形/原型证明用v2，旧批次不重写。字段编辑、导入、去重与三方冲突处理保留新字段。词形及上下文译文关联作为原子字段处理，避免拼成不一致的释义来源。
-- 桌面所有上传路径先检查正式站`release.json`声明兼容v2和context-morphology，未确认时暂停上传但允许本地收藏。元数据5分钟失效重新核对，禁止重定向、无凭证请求。Web通过实际部署测试后才可解除门槛。
+- 桌面所有上传路径先检查正式站`release.json`声明兼容v2和context-morphology，未确认时暂停上传但允许本地收藏。元数据5分钟失效重新核对，禁止重定向、无凭证请求。正式站元数据核对通过后可解除上传门槛；这不代替用户当前浏览器的版本更新或真实私库验收。
 
 ## 安全迁移的实际结果
 
@@ -37,7 +37,7 @@
 | `PLAYWRIGHT_CHANNEL=msedge npm run test:e2e -- --reporter list --output reports/test-results/integrated/web-full-20261027-2` | 37通过、3既有移动重复进程测试跳过；桌面对应进程测试通过。手机项目是Chromium仿真，不是iPhone验收；GitHub模拟 |
 | `PHASE41_LIVE_DICTIONARY=1 npm run test:desktop:e2e -- --grep 'LIVE public WiktApi' --reporter list --output reports/test-results/integrated/provider-live-final` | 1通过，真实Electron net.fetch访问WiktApi与MyMemory，4个人工词并另验UI查询；没有私库请求 |
 | `npm run check:dist` | 通过，含manifest、子路径、离线壳、SW更新、release1/2协议元数据且不缓存release.json |
-| `npm run check:secrets` | 通过；实际暂存223项源码/文档扫描通过，无凭证、私人数据目录、本机账户路径或个人邮箱。新增发布清单后会再次扫描；重新克隆检查待提交后执行 |
+| `npm run check:secrets` | 通过；实际224项源码/文档及发布清单扫描通过；在没有本地clean filter配置的新克隆中再次扫描通过。无识别凭证、私人数据目录、本机账户路径或个人邮箱 |
 
 E2E覆盖整句译文人工修改、点击persevered/difficulties、原型与原词形保存、上下文ID共用、上下文改动取消句译绑定、切换语言清除旧译文、离线收藏及真正退出重启恢复。授权专门测试使用真实Windows凭证管理器和两次Electron进程启动，覆盖恢复、网络失败、模拟401和忘记；凭证是人工测试字符串，GitHub响应是模拟服务。**不能据此声称真实PAT已自动恢复连接私库。**
 
@@ -55,14 +55,18 @@ Provider仍为免费WiktApi（Wiktionary/Kaikki，CC-BY-SA来源与署名链接�
 
 - **本轮跨应用快捷键实测未通过验收**：记事本工具没有可确认的编辑焦点；Edge控制随后因无法可靠确认当前URL被工具中止。已停止本轮窗口操作，没有绕过策略，也没有用模拟时间冒充200–300ms反馈或1秒取词达标。反馈/读取/词典/翻译分开的结构化计时日志已实现，但本轮没有完整的真实热键样本。
 - **真实私库端到端未执行**：本轮不复用聊天里泄露的旧PAT，正式0.6当前未连接。后续只允许人工数据和`Polar0216/polar-vocab-data-test/main`，先备份远端基线再执行上传/接收/去重/复习保留及真实重启恢复；不能覆盖冲突或初始化重建测试仓库。
-- Pages推送、Actions结论和正式站协议兼容：待本轮后续执行结果更新。
+- 源码提交`2ce4eab0f1588f90236aa06f38d68f299fc043a2`已正常`git push -u origin main`，远端从已核对的c4bee64快进；没有force push。公开[Actions 40423312726](https://github.com/Polar0216/polar-vocab/actions/runs/40423312726)的build和deploy均success，逐步骤公开API核对；没有读取CI原始日志或推测Linux测试精确数量。正式[网站](https://polar0216.github.io/polar-vocab/)和release.json返回200/0.6.0，声明采集与状态协议1/2。线上32文件中31个与本地已测产物字节一致（含接收器、协议和manifest）；sw.js仅预缓存条目跨平台排序不同，排序归一后整个脚本一致，离线壳、SKIP_WAITING及不缓存release.json/GitHub规则均核对。**这是实际HTTPS部署与代码一致性验证，尚未在正式站浏览器执行真实私库v1/v2接收。**
 - iOS自动查词与真机验收继续暂缓，不是本次发布阻塞条件。
 - Windows10、ARM和SmartScreen签名未验；本次x64应用无代码签名，未更改安全设置。
 
 ## 构建产物与启动
 
-新便携版：`artifacts/desktop/integrated-0.6.0/Polar-Vocab-Capture-0.6.0-win-x64.exe`，100606049字节，SHA256：`b6a1bd7df7bc317951914d4693a1621bf48564104169e425967dc8e87640c370`。同目录win-unpacked用于打包内容及正式目录启动验证，内含两个native helper。压缩便携exe已构建，尚未独立验证其自解压启动；不能把unpacked启动写成SFX启动通过。
+新便携版：`artifacts/desktop/integrated-0.6.0/Polar-Vocab-Capture-0.6.0-win-x64.exe`，100606049字节，SHA256：`b6a1bd7df7bc317951914d4693a1621bf48564104169e425967dc8e87640c370`。同目录win-unpacked用于打包内容及正式目录启动验证，内含两个native helper；ASAR版本/主进程/preload及两helper与已测构建字节一致，无队列、备份或识别凭证。压缩便携exe已构建，尚未独立验证其自解压启动；不能把unpacked启动写成SFX启动通过。
 
 正常启动双击新exe即可，不需设置数据目录变量。旧程序应通过托盘退出以释放快捷键；如果仍占用，0.6显示非阻塞提示，可先手动输入或改组合。关闭主窗只隐藏至托盘，退出用托盘“退出”。本机数据不随exe位置改变。
 
 详细文档：[架构](../../docs/ARCHITECTURE.md)、[整句/词形](../../docs/INTEGRATED_TEXT_FLOW.md)、[授权](../../docs/INTEGRATED_AUTH.md)、[迁移/回滚](../../docs/INTEGRATED_MIGRATION.md)。建议清理项目仅包括未来完成验收后的生成测试输出与旧重复包；**本次没有执行清理**。
+
+## 发布记录
+
+源码部署提交为`2ce4eab`；其后仅报告记录提交不改变程序，提交消息以`[skip ci]`避免重复部署相同Web。源码提交的完整CI已通过，报告补记仍执行实际暂存安全扫描。没有发布GitHub Release或上传exe，也没有操作私库历史。浏览器若仍显示旧站，应先应用网站更新；不能用公共能力文件替代旧PWA会话的升级。
