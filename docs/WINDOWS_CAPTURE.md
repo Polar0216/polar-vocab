@@ -1,8 +1,8 @@
-# Windows 划词与收词（Capture 0.6.0）
+# Windows 划词与收词（Capture 0.6.1）
 
 ## 启动和正式目录
 
-日常使用整合便携程序 `artifacts/desktop/integrated-0.6.0/Polar-Vocab-Capture-0.6.0-win-x64.exe`，无需隔离启动器、管理员权限或后台服务。程序未签名，SmartScreen和兼容性因机器而异，不要全局关闭系统安全保护。目标Windows10/11 x64，本轮环境为Windows11；Windows10尚未实测。实际生成、校验值和运行状态以[整合报告](../reports/integrated/INTEGRATED_RELEASE_REPORT.md)为准。
+日常使用整合便携程序 `artifacts/desktop/integrated-0.6.1-final/Polar-Vocab-Capture-0.6.1-win-x64.exe`，无需隔离启动器、管理员权限或后台服务。程序未签名，SmartScreen和兼容性因机器而异，不要全局关闭系统安全保护。目标Windows10/11 x64，本轮环境为Windows11；Windows10尚未实测。实际生成、校验值和运行状态以[整合报告](../reports/integrated/INTEGRATED_RELEASE_REPORT.md)为准。
 
 1. 先在旧版托盘选「退出并释放快捷键」；关闭旧窗口只隐藏，可能仍占用Ctrl+Alt+S。旧exe及队列继续保留。
 2. 双击新版exe。首次使用默认不开启自动上传或开机自启动，窗口关闭后驻留托盘。

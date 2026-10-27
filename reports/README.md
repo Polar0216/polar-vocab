@@ -4,6 +4,7 @@
 
 | 位置 | 内容 | 是否提交 |
 | --- | --- | --- |
+| [integrated/AUTH_WINDOW_FIX_0_6_1.md](integrated/AUTH_WINDOW_FIX_0_6_1.md) | 0.6.1原生授权窗口、取消/超时与实际便携启动修复 | 是 |
 | [integrated/INTEGRATED_RELEASE_REPORT.md](integrated/INTEGRATED_RELEASE_REPORT.md) | 0.6.0整合版、迁移、授权、词形/句译及实际发布边界 | 是 |
 | [phase-0/PHASE0_REPORT.md](phase-0/PHASE0_REPORT.md) | Phase 0 实施、测试结果、未验证项目与风险 | 是 |
 | [phase-1/PHASE1_REPORT.md](phase-1/PHASE1_REPORT.md) | Phase 1 本地词库、导入、备份与浏览器验收 | 是 |

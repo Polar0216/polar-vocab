@@ -13,7 +13,7 @@ test('REAL Windows vault + Electron process restarts; artificial GitHub: remembe
   const directory = mkdtempSync(join(root, 'run-')), profile = join(directory, 'profile'), fixture = join(directory, 'authorization-app.cjs'), helper = join(directory, 'CredentialHelper.exe')
   mkdirSync(profile)
   await build({ entryPoints: [resolve('apps/desktop/tests/fixtures/authorization-app.ts')], outfile: fixture, bundle: true, platform: 'node', format: 'cjs', target: 'node24', external: ['electron', 'node:sqlite'] })
-  execFileSync(join(process.env.WINDIR ?? 'C:/Windows', 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'), ['/nologo', '/target:exe', '/platform:x64', '/optimize+', '/out:' + helper, '/reference:System.Windows.Forms.dll', '/reference:System.Drawing.dll', '/reference:System.Web.Extensions.dll', resolve('apps/desktop/native/CredentialHelper.cs')], { windowsHide: true })
+  execFileSync(join(process.env.WINDIR ?? 'C:/Windows', 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'), ['/nologo', '/target:winexe', '/platform:x64', '/optimize+', '/out:' + helper, '/reference:System.Windows.Forms.dll', '/reference:System.Drawing.dll', '/reference:System.Web.Extensions.dll', resolve('apps/desktop/native/CredentialHelper.cs')], { windowsHide: true })
   const repository = 'auth-e2e-' + randomUUID()
   const launch = () => electron.launch({ args: [fixture], env: { ...process.env, POLAR_VOCAB_CAPTURE_DATA_DIR: profile, POLAR_VOCAB_AUTH_TEST_REPOSITORY: repository, POLAR_VOCAB_AUTH_TEST_HELPER: helper } })
   let app = await launch(), closed = false

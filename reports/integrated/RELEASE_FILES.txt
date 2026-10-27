@@ -44,13 +44,17 @@ apps/desktop/src/web-compatibility.ts
 apps/desktop/src/window.ts
 apps/desktop/tests/authorization.test.ts
 apps/desktop/tests/capture-flow.test.ts
+apps/desktop/tests/credential-prompt.test.ts
 apps/desktop/tests/dictionary.test.ts
 apps/desktop/tests/e2e/authorization.spec.ts
 apps/desktop/tests/e2e/capture-feedback.spec.ts
+apps/desktop/tests/e2e/credential-prompt.spec.ts
 apps/desktop/tests/e2e/desktop.spec.ts
 apps/desktop/tests/e2e/dictionary.spec.ts
 apps/desktop/tests/e2e/integrated.spec.ts
+apps/desktop/tests/fixtures/CredentialWindowDiagnostic.cs
 apps/desktop/tests/fixtures/authorization-app.ts
+apps/desktop/tests/fixtures/credential-prompt-app.ts
 apps/desktop/tests/fixtures/shortcut-owner.mjs
 apps/desktop/tests/migration.test.ts
 apps/desktop/tests/morphology.test.ts
@@ -94,6 +98,7 @@ public/pwa-192.png
 public/pwa-512.png
 public/pwa-maskable-512.png
 reports/README.md
+reports/integrated/AUTH_WINDOW_FIX_0_6_1.md
 reports/integrated/INTEGRATED_RELEASE_REPORT.md
 reports/integrated/RELEASE_FILES.txt
 reports/phase-0/PHASE0_REPORT.md

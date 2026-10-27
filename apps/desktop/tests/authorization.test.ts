@@ -142,6 +142,16 @@ describe('main-process authorization controller (artificial GitHub and credentia
     await authorization.disconnect()
     expect(await prompt).toBeNull(); expect(authorization.status().state).toBe('disconnected')
   })
+  it('cancels a rejected native prompt without turning cancellation into a vault error', async () => {
+    const runner: CredentialRunner = async (_path, command, signal) => command.op === 'prompt'
+      ? new Promise((_resolve, reject) => signal?.addEventListener('abort', () => reject(new CredentialError()), { once: true }))
+      : { ok: true }
+    const { authorization } = setup(new WindowsCredentialVault('unused', runner))
+    const prompt = authorization.prompt(target)
+    authorization.cancelPreview()
+    expect(await prompt).toBeNull()
+    expect(authorization.status()).toMatchObject({ state: 'disconnected', remembered: false })
+  })
 })
 
 describe('credential target binding and fixed helper protocol', () => {
@@ -164,7 +174,7 @@ describe('credential target binding and fixed helper protocol', () => {
 describe.skipIf(process.platform !== 'win32')('REAL Windows Credential Manager with artificial values (no real GitHub)', () => {
   const helper = join(root, 'CredentialHelper.exe')
   beforeAll(() => {
-    execFileSync(join(process.env.WINDIR ?? 'C:/Windows', 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'), ['/nologo', '/target:exe', '/platform:x64', '/optimize+', '/out:' + helper, '/reference:System.Windows.Forms.dll', '/reference:System.Drawing.dll', '/reference:System.Web.Extensions.dll', resolve('apps/desktop/native/CredentialHelper.cs')], { windowsHide: true })
+    execFileSync(join(process.env.WINDIR ?? 'C:/Windows', 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'), ['/nologo', '/target:winexe', '/platform:x64', '/optimize+', '/out:' + helper, '/reference:System.Windows.Forms.dll', '/reference:System.Drawing.dll', '/reference:System.Web.Extensions.dll', resolve('apps/desktop/native/CredentialHelper.cs')], { windowsHide: true })
   })
   it('stores in the real per-user vault, restores after a real process restart, and disconnects without plaintext files', async () => {
     const realTarget = { owner: 'capture-test', repository: 'native-vault-' + randomUUID(), branch: 'main' }

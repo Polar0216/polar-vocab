@@ -36,7 +36,8 @@ export class AuthorizationController {
       this.set(previous.state, previous.message)
       return token
     } catch (error) {
-      if (generation === this.generation) await this.failed(error, undefined)
+      if (generation !== this.generation) return null
+      await this.failed(error, undefined)
       throw error
     } finally { this.prompting = false }
   }

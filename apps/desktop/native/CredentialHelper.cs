@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -28,6 +29,8 @@ internal static class CredentialHelper {
     [DllImport("advapi32.dll", EntryPoint = "CredDeleteW", CharSet = CharSet.Unicode, SetLastError = true)]
     static extern bool Delete(string target, uint type, uint flags);
     [DllImport("advapi32.dll")] static extern void CredFree(IntPtr pointer);
+    [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr window);
+    [DllImport("user32.dll")] static extern bool ShowWindow(IntPtr window, int command);
 
     static readonly JavaScriptSerializer Json = new JavaScriptSerializer { MaxJsonLength = 8192 };
     static string Text(Dictionary<string, object> input, string key) { object value; return input.TryGetValue(key, out value) ? value as string : null; }
@@ -61,14 +64,23 @@ internal static class CredentialHelper {
             };
             form.Controls.AddRange(new Control[] { heading, hint, password, ok, cancel });
             form.AcceptButton = ok; form.CancelButton = cancel;
+            form.Shown += delegate {
+                if (!IsWindowVisible(form.Handle)) ShowWindow(form.Handle, 1);
+                if (!IsWindowVisible(form.Handle)) { form.DialogResult = DialogResult.Cancel; form.Close(); return; }
+                form.Activate(); password.Focus(); Console.Error.WriteLine("polar-credential-prompt-ready");
+            };
             var result = form.ShowDialog(); password.Text = "";
             return result == DialogResult.OK ? selected : null;
         }
     }
     [STAThread]
     static void Main(string[] args) {
-        Console.InputEncoding = new UTF8Encoding(false); Console.OutputEncoding = new UTF8Encoding(false);
         try {
+            // GUI-subsystem processes have no console code page to change. Use
+            // only the inherited anonymous pipes; never allocate a console.
+            Console.SetIn(new StreamReader(Console.OpenStandardInput(), new UTF8Encoding(false, true)));
+            Console.SetOut(new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false)) { AutoFlush = true });
+            Console.SetError(new StreamWriter(Console.OpenStandardError(), new UTF8Encoding(false)) { AutoFlush = true });
             if (args.Length != 0) { Output(new { ok = false, code = "invalid-request" }); return; }
             var text = new StringBuilder(); var buffer = new char[256]; int count;
             while ((count = Console.In.Read(buffer, 0, buffer.Length)) > 0) {

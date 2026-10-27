@@ -2,11 +2,11 @@
 
 个人英语、德语词汇收集与间隔复习系统：GitHub Pages 静态 PWA、IndexedDB 本地优先、独立 GitHub 私有数据仓库，以及 Windows 桌面收词器。无需自建服务器、Serverless 或云数据库。
 
-当前开发版本为 **Polar Vocab Capture 0.6.0 整合版**，基于原有工程增量整合划词反馈、英德词典、结构化义项、整句翻译、句中选词和本机安全授权。实际发布、真实服务及私库验收结果以 [整合发布报告](reports/integrated/INTEGRATED_RELEASE_REPORT.md) 为准；本地或模拟测试通过不代表正式网站或真实私库已经通过。旧程序、队列、测试数据与阶段报告继续保留；本轮不执行 iOS 验收。
+当前开发版本为 **Polar Vocab Capture 0.6.1 整合版**，基于原有工程增量整合划词反馈、英德词典、结构化义项、整句翻译、句中选词和本机安全授权。实际发布、真实服务及私库验收结果以 [整合发布报告](reports/integrated/INTEGRATED_RELEASE_REPORT.md) 为准；本地或模拟测试通过不代表正式网站或真实私库已经通过。旧程序、队列、测试数据与阶段报告继续保留；本轮不执行 iOS 验收。
 
 ## Windows 日常使用
 
-日常入口为整合版便携程序 `artifacts/desktop/integrated-0.6.0/Polar-Vocab-Capture-0.6.0-win-x64.exe`。最终可执行文件的生成、校验值及实测状态见整合报告。无需隔离启动器：正式数据目录固定为 `%APPDATA%\Polar Vocab\Capture`，SQLite 为 `captures.sqlite`；Chromium 缓存独立放在同级 `Capture.runtime`。具体路径也显示在设置页。
+日常入口为整合版便携程序 `artifacts/desktop/integrated-0.6.1-final/Polar-Vocab-Capture-0.6.1-win-x64.exe`。最终可执行文件的生成、校验值及实测状态见整合报告。无需隔离启动器：正式数据目录固定为 `%APPDATA%\Polar Vocab\Capture`，SQLite 为 `captures.sqlite`；Chromium 缓存独立放在同级 `Capture.runtime`。具体路径也显示在设置页。
 
 1. 正常退出旧版后双击新版；程序常驻托盘。默认快捷键 Ctrl+Alt+S，若被其他程序占用，可在设置更换，不需要删除旧程序或目录。
 2. 在原应用选中人工文本后按快捷键。非激活反馈先显示，原生读取与词典、翻译异步进行；读取失败仍可手动输入或粘贴。
